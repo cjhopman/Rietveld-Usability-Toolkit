@@ -17,7 +17,7 @@
       "38": "icons/38.png"
     },
     "default_title" : "Rietveld Prettifier",
-    "default_popup" : "fancy-settings/source/popup.html"
+    "default_popup" : "settings/popup.html"
   },
   "content_scripts": [
     {
@@ -46,5 +46,5 @@
     "48": "icons/48.png",
     "128": "icons/128.png"
   },
-  "options_page" : "fancy-settings/source/index.html"
+  "options_page" : "settings/options.html"
 }
