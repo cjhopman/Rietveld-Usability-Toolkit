@@ -26,19 +26,51 @@
         "https://codereview.chromium.org/*"
       ],
       "all_frames": true,
-      "js": ["lib/jquery-1.8.3.min.js","scripts/main.js"],
-      "css": [],
+      "js": [
+        "lib/jquery-1.8.3.min.js",
+        "lib/jsonlint.js",
+        "settings/settings.js",
+        "scripts/storage.js"
+      ],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "http://codereview.chromium.org/*",
+        "https://codereview.chromium.org/*"
+      ],
+      "all_frames": true,
+      "js": [
+        "scripts/main.js"
+      ],
+      "css": [
+        "css/main.css"
+      ],
       "run_at": "document_idle"
     },
     {
       "matches": [
-        "http://codereview.chromium.org/*diff*",
-        "https://codereview.chromium.org/*diff*"
+        "http://codereview.chromium.org/*/diff*",
+        "https://codereview.chromium.org/*/diff*"
       ],
       "all_frames": true,
-      "js": ["lib/jquery-1.8.3.min.js","scripts/diff_begin.js"],
+      "js": [
+        "scripts/diff_begin.js"
+      ],
       "css": ["css/style.css"],
       "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "http://codereview.chromium.org/*/diff*",
+        "https://codereview.chromium.org/*/diff*"
+      ],
+      "all_frames": true,
+      "js": [
+        "scripts/diff_idle.js"
+      ],
+      "css": ["css/style.css"],
+      "run_at": "document_end"
     }
   ],
   "icons": {
@@ -46,5 +78,8 @@
     "48": "icons/48.png",
     "128": "icons/128.png"
   },
-  "options_page" : "settings/options.html"
+  "web_accessible_resources": [
+    "settings/settings.json"
+  ],
+  "options_page" : "settings/settings.html"
 }

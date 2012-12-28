@@ -1,0 +1,3 @@
+.rb-showingDiff:not(.rb-filename) {
+  background-color: red
+}

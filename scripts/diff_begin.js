@@ -6,21 +6,119 @@ var codelineSelector = '\
     .newmove, .newchangemove, .newchangemove1, \
     .udiffadd, .udiffremove, .udiff, .debug-info';
 
-$(document.documentElement).append($('<style id="codelineStyle"/>'))
+
+/*
+.oldblank, .newblank {
+    background-color: #eee;
+}
+
+
+.olddelete {
+    background-color: #faa;
+}
+.newinsert {
+    background-color: #9f9;
+}
+
+
+.oldreplace1 {
+    background-color: #faa;
+}
+.newreplace1 {
+    background-color: #9f9;
+}
+.oldreplace {
+    background-color: #fee;
+}
+.newreplace {
+    background-color: #dfd;
+}
+
+
+.oldinsert, .newdelete {
+    background-color: #ddd;
+}
+*/
+
+
+function addStyleNode(id) {
+  $(document.documentElement).append($('<style class="rb-style" id="' + id + '"/>'))
+}
+
+addStyleNode('codelineStyle');
+addStyleNode('codelineColors');
+addStyleNode('codelineAdjust');
+
+function changeStyle(id, style) {
+  $('#' + id).html(style);
+}
+function createStyle(selector, attr, value) {
+  return selector + '{' + attr + ':' + value + ' !important' + '}\n';
+}
 
 function updateCodelineFont() {
-  chrome.storage.sync.get({ 'fontEnabled': true, 'font': 'Inconsolata' } , function(items) {
+  chrome.storage.sync.get(['codeFontEnabled', 'codeFont'] , function(items) {
     var html = '';
-    if (items['fontEnabled']) {
-      html = codelineSelector + '{ font-family: ' + items['font'] + ', monospace !important; }';
+    if (items['codeFontEnabled']) {
+      html = codelineSelector + '{ font-family: ' + items['codeFont'] + ', monospace !important; }';
     }
-    $('#codelineStyle').html(html);
+    changeStyle('codelineStyle', html);
   });
 }
 updateCodelineFont();
 chrome.storage.onChanged.addListener(function(changes, namespace) {
-  if ('fontEnabled' in changes || 'font' in changes) {
-    updateCodelineFont();
-  }
-});
+  updateCodelineFont();
+}, ['codeFontEnabled', 'codeFont']);
+
+
+
+function updateCodelineColors() {
+  chrome.storage.sync.get(['changeReplaceColor', 'colorBlindMode'] , function(items) {
+    if (!items['changeReplaceColor'] && !items['colorBlindMode']) return;
+
+    var html = createStyle('.oldlight, .newlight', 'display', 'inline-block');
+
+    // The way that Rietveld does coloring is broken. So let's hack it some.
+    html += createStyle('.olddark, .newdark', 'background-color', 'rgba(0,0,0,0)');
+    html += createStyle('.oldlight, .newlight', 'background-color', 'rgba(255,255,255,0.7)');
+
+    var deleteColor = '#faa';
+    var insertColor = '#9f9';
+    var replaceColor = '#9af';
+
+    if (items['colorBlindMode']) {
+      // From Cynthia Brewer's colorbrewer2.
+      // deleteColor = 'rgb(217, 95, 2)';
+      // insertColor = 'rgb(27, 158, 119)';
+      // replaceColor = 'rgb(117, 112, 179)';
+      // And lightened (in HSV-space and back) up a bit:
+      // deleteColor = 'rgb(255, 112, 3)';
+      // insertColor = 'rgb(43, 255, 192)';
+      // replaceColor = 'rgb(167, 161, 255)';
+      // And modified just slightly after playing with compiz filters:
+      deleteColor = 'rgb(255, 112, 3)';
+      insertColor = 'rgb(43, 255, 162)';
+      replaceColor = 'rgb(167, 112, 255)';
+    }
+
+    // Default Rietveld Colors;
+    var oldReplaceColor = deleteColor;
+    var newReplaceColor = insertColor;
+
+    if (items['changeReplaceColor']) {
+      oldReplaceColor = newReplaceColor = replaceColor;
+    }
+
+    html += createStyle('.oldreplace, .oldreplace1', 'background-color', oldReplaceColor);
+    html += createStyle('.newreplace, .newreplace1', 'background-color', newReplaceColor);
+    html += createStyle('.olddelete', 'background-color', deleteColor);
+    html += createStyle('.newinsert', 'background-color', insertColor);
+
+    changeStyle('codelineColors', html);
+  });
+}
+updateCodelineColors();
+chrome.storage.onChanged.addListener(function(changes, namespace) {
+  updateCodelineColors();
+}, ['changeReplaceColor', 'colorBlindMode']);
 
