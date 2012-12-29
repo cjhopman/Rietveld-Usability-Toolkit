@@ -2,7 +2,7 @@
 // manifest, and add some functionality.
 
 function decorateChromeApis() {
-  var keys = Object.keys(settings.settings);
+  var keys = Object.keys(manifest.settings);
   function validateKeys(obj) {
     if (!$.isArray(obj) && !$.isPlainObject(obj)) {
       obj = [obj];
@@ -44,7 +44,7 @@ function decorateChromeApis() {
       var keysWithDefaults = {};
       $.each(keys, function(k) {
         k = $.isNumeric(k) ? keys[k] : k;
-        return keysWithDefaults[k] = settings.settings[k].default;
+        return keysWithDefaults[k] = manifest.settings[k].default;
       });
       return fn.call(storageArea, keysWithDefaults, callback);
     };
@@ -55,8 +55,25 @@ function decorateChromeApis() {
   function decorateSet(storageArea) {
     var fn = storageArea.set;
     storageArea.set = function(items, cb) {
-      items = validateKeys(items);
-      return fn.call(items, cb);
+      // Ensure values are valid for the type.
+      $.each(items, function(k) {
+        var val = items[k];
+        var type = manifest.settings[k].type;
+        switch (type) {
+          case 'bool':
+            if (typeof val != 'boolean') {
+              throw new Error('<' + val + '> is not a bool');
+            }
+            break;
+          case 'string':
+            break;
+          case 'dict':
+            break;
+          default:
+            throw new Error('Unrecognized type: ' + type);
+        }
+      });
+      return fn.call(storageArea, items, cb);
     }
   }
   decorateSet(chrome.storage.local);

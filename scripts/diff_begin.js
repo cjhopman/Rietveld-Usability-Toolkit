@@ -49,9 +49,17 @@ addStyleNode('codelineStyle');
 addStyleNode('codelineColors');
 addStyleNode('codelineAdjust');
 
+var changeStyleId = 0;
 function changeStyle(id, style) {
-  $('#' + id).html(style);
+  var node = $('#' + id);
+  node.html(style);
+
+  // If this diff is displayed inline in a containing patch set page, we need
+  // the installed mutation observer to be triggered to possibly resize the
+  // iframe. Changing a class on this node will trigger the observer.
+  node.toggleClass('rb-trigger');
 }
+
 function createStyle(selector, attr, value) {
   return selector + '{' + attr + ':' + value + ' !important' + '}\n';
 }
@@ -74,7 +82,9 @@ chrome.storage.onChanged.addListener(function(changes, namespace) {
 
 function updateCodelineColors() {
   chrome.storage.sync.get(['changeReplaceColor', 'colorBlindMode'] , function(items) {
-    if (!items['changeReplaceColor'] && !items['colorBlindMode']) return;
+    if (!items['changeReplaceColor'] && !items['colorBlindMode']) {
+      changeStyle('codelineColors', '');
+    }
 
     var html = createStyle('.oldlight, .newlight', 'display', 'inline-block');
 
@@ -119,6 +129,6 @@ function updateCodelineColors() {
 }
 updateCodelineColors();
 chrome.storage.onChanged.addListener(function(changes, namespace) {
-  updateCodelineColors();
+  updateCodelineColors(true);
 }, ['changeReplaceColor', 'colorBlindMode']);
 
