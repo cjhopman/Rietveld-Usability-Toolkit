@@ -106,27 +106,42 @@ function updateLinksForRow(row) {
   });
 }
 
-// A simple throttling mechanism for frame loads.
+var loadLimit = 2;
+
+// A simple priority/throttling mechanism for frame loads.
 var loadQueue = [];
-var loading = false;
+var loading = 0;
+function shiftLoadQueue() {
+  return loadQueue.shift();
+}
+function pushLoadQueue(id, priority, fn) {
+  loadQueue.push({ id: id, priority: priority, fn: fn });
+  // If a bunch of pushes are triggered at the same time, we want to wait a bit
+  // before pumping in case a higher priority load is about to be pushed.
+  setTimeout(pumpLoadQueue, 20);
+}
 function pumpLoadQueue() {
-  if (!loading && loadQueue.length > 0) {
-    loadQueue.shift()(
-        function() { loading = true; },
-        function() { loading = false; pumpLoadQueue(); });
-  }
+  if (loadQueue.length == 0) return;
+  chrome.storage.sync.get(['loadLimit', 'queueThrottle'], function(items) {
+    if (loading < items['loadLimit'] && loadQueue.length > 0) {
+      loading++;
+      shiftLoadQueue().fn(function() {
+        loading--;
+        // Throttle the load queue a bit.
+        setTimeout(pumpLoadQueue, items['queueThrottle']);
+      });
+    }
+  });
 }
 function queueFrameLoad(frame, src) {
-  loadQueue.push(function(enter, exit) {
-    enter();
+  var priority = frame.closest('tr').index();
+  pushLoadQueue(frame.attr('id'), src, function(finishedCallback) {
     frame.attr('src', src);
     frame.load(function() {
-      console.log(frame.attr('id'));
       iframeLoaded(frame.attr('id'));
-      exit();
+      finishedCallback();
     });
   });
-  pumpLoadQueue();
 }
 
 function createInlineDiff(el) {
@@ -159,48 +174,50 @@ function removeDiffChrome(page) {
 }
 
 function iframeLoaded(id) {
-  return function() {
-    var frame = $("#" + id);
-    var inner = frame.contents();
+  var frame = $("#" + id);
+  var inner = frame.contents();
 
-    var resizer = function() {
-      var newHeight = inner.outerHeight(true);
-      var newWidth = inner.outerWidth(true);
-      if (frame.css('height') != newHeight || frame.css('width') != newWidth) {
-        // FIXME: This is a total hack. When the page in the iframe gets
-        // smaller, its document still fills the iframe, and so newHeight/Width
-        // above are larger than we want. If we first make the frame small (not
-        // too small, because that causes the outer page to scroll), the
-        // document will then shrink to the size of its interior. There should
-        // be a better way to do this.
-        newHeight = inner.find('html').height();
-        newWidth = inner.find('html').width();
-        frame.css('height', newHeight).css('width', newWidth);
-        newHeight = inner.outerHeight(true);
-        newWidth = inner.outerWidth(true);
-        frame.css('height', newHeight).css('width', newWidth);
-      }
-    };
+  var resizer = function() {
+    var newHeight = inner.outerHeight(true);
+    var newWidth = inner.outerWidth(true);
+    if (frame.css('height') != newHeight || frame.css('width') != newWidth) {
+      // FIXME: This is a total hack. When the page in the iframe gets
+      // smaller, its document still fills the iframe, and so newHeight/Width
+      // above are larger than we want. If we first make the frame small (not
+      // too small, because that causes the outer page to scroll), the
+      // document will then shrink to the size of its interior. There should
+      // be a better way to do this.
+      newHeight = inner.find('html').height();
+      newWidth = inner.find('html').width();
+      frame.css('height', newHeight).css('width', newWidth);
+      newHeight = inner.outerHeight(true);
+      newWidth = inner.outerWidth(true);
+      frame.css('height', newHeight).css('width', newWidth);
+    }
+  };
 
-    // FIXME: more hacks. Without this, the new frame flashes at the left edge
-    // of the row before moving to the center.
-    frame.css('height', '0px').css('width', '0px');
-    removeDiffChrome(inner);
+  // FIXME: more hacks. Without this, the new frame flashes at the left edge
+  // of the row before moving to the center.
+  frame.css('height', '0px').css('width', '0px');
+  removeDiffChrome(inner);
 
-    // The observer must be installed before the first resizer() call (otherwise
-    // we may miss a modification between the resizer() call an observer
-    // installation).
-    var observer = new WebKitMutationObserver(resizer);
-    observer.observe(inner[0], { attributes: true, subtree: true } );
-    resizer();
-    toggleFrame(frame);
-  }
+  // The observer must be installed before the first resizer() call (otherwise
+  // we may miss a modification between the resizer() call an observer
+  // installation).
+  var observer = new WebKitMutationObserver(resizer);
+  observer.observe(inner[0], { attributes: true, subtree: true } );
+  resizer();
+  toggleFrame(frame);
 }
 
-function modifyDiffLinks() {
-  chrome.storage.sync.get(['rewriteUnifiedLinks', 'enableInlineDiffs'], function(items) {
+function updatePatchTables() {
+  chrome.storage.sync.get(['rewriteUnifiedLinks', 'enableInlineDiffs', 'createViewAllButtons'], function(items) {
     var shouldRewrite = items['rewriteUnifiedLinks'];
     var enableInline = items['enableInlineDiffs'];
+    var createViewAll = items['createViewAllButtons'];
+
+    $('.rb-modified').toggle(createViewAll);
+    $('.rb-original').toggle(!createViewAll);
 
     if (!enableInline) {
       // Hide all currently showing inline diffs.
@@ -224,7 +241,7 @@ function modifyDiffLinks() {
     }
   });
 }
-chrome.storage.onChanged.addListener(modifyDiffLinks, ['rewriteUnifiedLinks', 'enableInlineDiffs']);
+chrome.storage.onChanged.addListener(updatePatchTables, ['rewriteUnifiedLinks', 'enableInlineDiffs', 'createViewAllButtons']);
 
 function frameIdSuffixFromDiffHref(href) {
   return '_frame_' + href.match('/diff2?/([^/]*)/')[1].replace(':', '_');
@@ -233,6 +250,44 @@ function frameIdSuffixFromDiffHref(href) {
 // Inject some data into various DOM elements to make modifications (and
 // reversals) easier.
 function preparePatchSets() {
+  // Modify table header rows.
+  $('.issue-list table:not(.rb-patchtable)')
+      .addClass('rb-patchtable')
+      .find('tr:first-of-type')
+      .addClass('rb-tableheader')
+      .each(function() {
+        var hideAll = $('<div/>')
+          .addClass('rb-hideAll');
+        var showDiff = $('<div/>')
+          .addClass('rb-showDiff');
+        var showDelta = $('<div/>')
+          .addClass('rb-showDelta');
+
+        var original = $('<div/>').addClass('rb-original');
+        var modified = $('<div/>').addClass('rb-modified');
+
+        var unifiedCell = $(this).children().eq(1);
+        var diffCell = unifiedCell.next();
+        var deltaCell = diffCell.next();
+
+        var unifiedModified = modified.clone()
+          .append(unifiedCell.html())
+          .append(hideAll)
+
+        var diffModified = modified.clone()
+          .append(showDiff)
+
+        var deltaModified = modified.clone()
+          .append(showDelta)
+
+        unifiedCell.html(original.clone().append(unifiedCell.html()));
+        diffCell.html(original.clone().append(diffCell.html()));
+        deltaCell.html(original.clone().append(deltaCell.html()));
+
+        unifiedCell.append(unifiedModified);
+        diffCell.append(diffModified);
+        deltaCell.append(deltaModified);
+      });
   var difflinks = $('.issue-list a[href*="/diff"]:not(.rb-difflink)')
     .addClass('rb-difflink');
 
@@ -254,9 +309,9 @@ function preparePatchSets() {
       $(this).data({ frameId: frameId, diff: href });
       var issueList = $(this).closest('.issue-list');
       var diffColumns = issueList.data().diffColumns;
-      var columnId = $(this).html();
-      $(this).addClass('column' + columnId);
-      console.log(columnId);
+      var columnId = 'rb-column' + $(this).html();
+      $(this).addClass(columnId);
+      var header = $(this).closest('.issue-list').find('.rb-patchHeader');
     })
 
   $('.issue-list a[href*="/patch/"]:not(.rb-filename)')
@@ -273,13 +328,13 @@ function preparePatchSets() {
 function setupPatchSetObserver() {
   var observer = new WebKitMutationObserver(function() {
     preparePatchSets();
-    modifyDiffLinks();
+    updatePatchTables();
   });
   $('div[id^=ps-]').each(function () { observer.observe(this, { childList: true }); });
 }
 setupPatchSetObserver();
 preparePatchSets();
-modifyDiffLinks();
+updatePatchTables();
 
 // The baseurl is often long and makes the whole left pane too long... hide it.
 function hideBaseUrl() {

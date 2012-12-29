@@ -7,6 +7,11 @@ var manifest = {
       "default": true,
       "description": "Enable inline diffs."
     },
+    "createViewAllButtons": {
+      "type": "bool",
+      "default": true,
+      "description": "Create buttons to open all diffs."
+    },
     "rewriteUnifiedLinks": {
       "type": "bool",
       "default": true,
@@ -46,6 +51,16 @@ var manifest = {
       "type": "bool",
       "default": true,
       "description": "Use a different color for replace sections."
+    },
+    "loadLimit": {
+      "type": "number",
+      "default": 2,
+      "description": "Maximum simultaneous frame loads."
+    },
+    "queueThrottle": {
+      "type": "number",
+      "default": 200,
+      "description": "Delay between successive frame loads."
     }
   }
 }
