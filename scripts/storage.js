@@ -44,7 +44,7 @@ function decorateChromeApis() {
       var keysWithDefaults = {};
       $.each(keys, function(k) {
         k = $.isNumeric(k) ? keys[k] : k;
-        return keysWithDefaults[k] = manifest.settings[k].default;
+        keysWithDefaults[k] = manifest.settings[k].default;
       });
       return fn.call(storageArea, keysWithDefaults, callback);
     };

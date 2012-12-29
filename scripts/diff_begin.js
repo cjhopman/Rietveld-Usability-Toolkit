@@ -68,7 +68,7 @@ function updateCodelineFont() {
   chrome.storage.sync.get(['codeFontEnabled', 'codeFont'] , function(items) {
     var html = '';
     if (items['codeFontEnabled']) {
-      html = codelineSelector + '{ font-family: ' + items['codeFont'] + ', monospace !important; }';
+      html = createStyle(codelineSelector, 'font-family', items['codeFont'] + ', monospace')
     }
     changeStyle('codelineStyle', html);
   });
