@@ -10,7 +10,8 @@ var manifest = {
     "createViewAllButtons": {
       "type": "bool",
       "default": true,
-      "description": "Create buttons to open all diffs."
+      "description": "Create buttons to open all diffs.",
+      "requires": "enableInlineDiffs"
     },
     "rewriteUnifiedLinks": {
       "type": "bool",
@@ -45,7 +46,7 @@ var manifest = {
     "colorBlindMode": {
       "type": "bool",
       "default": false,
-      "description": "Make diff color coding more (maybe?) colorblind friendly."
+      "description": "Make diff color coding more colorblind friendly (maybe)."
     },
     "changeReplaceColor": {
       "type": "bool",

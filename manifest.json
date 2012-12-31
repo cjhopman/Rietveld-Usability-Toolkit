@@ -41,6 +41,7 @@
       ],
       "all_frames": true,
       "js": [
+        "scripts/loadQueue.js",
         "scripts/main.js"
       ],
       "css": [

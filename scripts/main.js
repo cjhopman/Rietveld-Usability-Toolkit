@@ -1,46 +1,18 @@
 chrome.extension.sendMessage({}, function(response) {});
 
-function useInconsolata() {
-  return true;
-}
-
-var codelineSelector = '\
-    .olddark, .newdark, .oldreplace, .olddelete, .oldinsert, .oldequal, .oldblank, \
-    .oldlight, .newlight, .oldreplace1, .newreplace1, \
-    .newreplace, .newdelete, .newinsert, .newequal, .newblank, \
-    .oldmove, .oldchangemove, .oldchangemove1, .oldmove_out, .oldchangemove_out, \
-    .newmove, .newchangemove, .newchangemove1, \
-    .udiffadd, .udiffremove, .udiff, .debug-info';
-
-
-var currentId = 0;
-
-function getDiffRow(el) {
-  var fromRow = el.closest('tr');
-  var rowId = fromRow.data().rowId;
-  var newRow = $("#" + rowId);
-  if (newRow.length) return newRow;
-
-  newRow = $('<tr id="' + rowId + '"></tr>');
-  newRow.addClass('rb-frameRow');
-  newRow.data({ showingFrameId: null });
-  var newCell = $('<td colspan=1000></td>');
-  var div = $('<div style="margin:0 auto; width:100%; height:100%; text-align:center"/>');
-  fromRow.after(newRow);
-  return newRow.append(newCell.append(div));
-}
-
-function getDiffFrame(el) {
-  var newRow = getDiffRow(el);
-  var rowId = newRow.data().rowId;
-  var frameId = el.data().frameId;
-  var frame = $("#" + frameId);
-  if (frame.length) return frame;
-
-  var newFrame = $('<iframe id="' + frameId + '" src="javascript:false" style="width:100%; display: none" frameBorder="0"/>');
-  newFrame.addClass('rb-inlineDiff');
-  newRow.find('div').append(newFrame);
-  return newFrame;
+// It's expensive to inject all the iframes on startup, so do it lazily.
+function getFrameById(id) {
+  var frame = $("#" + id);
+  if (frame.length == 0) {
+    frame = $('<iframe id="' + id + '" style="width:100%" frameBorder="0"/>')
+      .hide()
+      .addClass('rb-inlineDiff');
+    var rowId = id.match('inline_diff_row_[0-9]*')[0];
+    $('#' + rowId)
+      .find('.rb-frameDiv')
+      .append(frame);
+  }
+  return frame;
 }
 
 function hideFrame(row) {
@@ -48,23 +20,12 @@ function hideFrame(row) {
   if (currFrame.length < 1) {
     throw new Error('No current frame found?!?!');
   }
-  // TODO: animate
-  row.hide();
-  currFrame.hide();
   row.data({ showingFrameId: null });
-}
 
-function showFrame(row, frame) {
-  var currFrameId = row.data().showingFrameId;
-  if (currFrameId) {
-    swapFrame(row, frame);
-    return;
-  }
-
-  // TODO: animate
-  row.show();
-  frame.show();
-  row.data({ showingFrameId: frame.attr('id') });
+  row.find('.rb-frameDiv').slideUp(500, function() {
+    row.hide();
+    currFrame.hide();
+  });
 }
 
 function swapFrame(row, frame) {
@@ -75,15 +36,28 @@ function swapFrame(row, frame) {
   currFrame.hide();
   frame.show();
   row.data({ showingFrameId: frame.attr('id') });
+  row.find('.rb-frameDiv').slideDown(500);
+}
+
+function showFrame(row, frame) {
+  var currFrameId = row.data().showingFrameId;
+  if (currFrameId) {
+    swapFrame(row, frame);
+    return;
+  }
+
+  row.show();
+  frame.show();
+  row.data({ showingFrameId: frame.attr('id') });
+  row.find('.rb-frameDiv').slideDown(500);
 }
 
 function toggleFrame(frame) {
-  var row = frame.closest('tr');
-  var frameId = frame.attr('id');
-  var currFrameId = row.data().showingFrameId;
+  var row = frame.closest('tr'),
+    frameId = frame.attr('id'),
+    currFrameId = row.data().showingFrameId;
   if (currFrameId == frameId) {
     hideFrame(row);
-    row.hide();
   } else {
     if (currFrameId) {
       swapFrame(row, frame);
@@ -97,7 +71,7 @@ function toggleFrame(frame) {
 // Update the links in the previous row so that when an inline diff is shown,
 // the proper link is highlighted.
 function updateLinksForRow(row) {
-  var links = row.prev().find('.rb-difflink');
+  var links = row.prev().find('.rb-diffLink');
   links.each(function() {
     var anchor = $(this);
     var frameId = anchor.data().frameId;
@@ -106,38 +80,12 @@ function updateLinksForRow(row) {
   });
 }
 
-var loadLimit = 2;
-
-// A simple priority/throttling mechanism for frame loads.
-var loadQueue = [];
-var loading = 0;
-function shiftLoadQueue() {
-  return loadQueue.shift();
-}
-function pushLoadQueue(id, priority, fn) {
-  loadQueue.push({ id: id, priority: priority, fn: fn });
-  // If a bunch of pushes are triggered at the same time, we want to wait a bit
-  // before pumping in case a higher priority load is about to be pushed.
-  setTimeout(pumpLoadQueue, 20);
-}
-function pumpLoadQueue() {
-  if (loadQueue.length == 0) return;
-  chrome.storage.sync.get(['loadLimit', 'queueThrottle'], function(items) {
-    if (loading < items['loadLimit'] && loadQueue.length > 0) {
-      loading++;
-      shiftLoadQueue().fn(function() {
-        loading--;
-        // Throttle the load queue a bit.
-        setTimeout(pumpLoadQueue, items['queueThrottle']);
-      });
-    }
-  });
-}
 function queueFrameLoad(frame, src) {
   var priority = frame.closest('tr').index();
-  pushLoadQueue(frame.attr('id'), src, function(finishedCallback) {
+  var frameId = frame.attr('id');
+  pushLoadQueue(frameId, priority, function(finishedCallback) {
     frame.attr('src', src);
-    frame.load(function() {
+    frame.one('load', function() {
       iframeLoaded(frame.attr('id'));
       finishedCallback();
     });
@@ -145,20 +93,19 @@ function queueFrameLoad(frame, src) {
 }
 
 function createInlineDiff(el) {
-  var frame = getDiffFrame(el);
-  var currentSrc = frame.attr('src');
-  var newSrc = el.data().diff;
   chrome.storage.sync.get(['autoSetColumnWidth', 'columnWidthMap'], function(items) {
+    var newSrc = el.data().diff;
     if (items['autoSetColumnWidth']) {
       var filetype = newSrc.substr(newSrc.lastIndexOf('.') + 1);
       if (filetype in items['columnWidthMap'])
         newSrc += '?column_width=' + items['columnWidthMap'][filetype];
     }
-    if (currentSrc == newSrc) {
+    var frame = getFrameById(el.data().frameId);
+    if (frame.data().frameLoaded) {
       toggleFrame(frame);
       return;
     }
-    var row = frame.closest('tr');
+    var row = $('#' + el.data().rowId);
     if (row.data().showingFrameId) {
       hideFrame(row);
     }
@@ -169,12 +116,19 @@ function createInlineDiff(el) {
 
 function removeDiffChrome(page) {
   var code = page.find(".code");
-  code.parents().andSelf().css('margin', '0').css('display', 'table').siblings().hide();
+  code.parents().andSelf()
+    .css('margin', '0')
+    .css('display', 'table')
+    .siblings()
+      .hide();
   code.find(".codenav").hide();
 }
 
 function iframeLoaded(id) {
   var frame = $("#" + id);
+  frame.data({ frameLoaded: true });
+  var row = frame.closest('tr');
+
   var inner = frame.contents();
 
   var resizer = function() {
@@ -200,14 +154,25 @@ function iframeLoaded(id) {
   // of the row before moving to the center.
   frame.css('height', '0px').css('width', '0px');
   removeDiffChrome(inner);
+  // Sometimes we get scrollbars in the frame when we don't actually need them.
+  // Let's hammer those away. (What happens when we actually need them?)
+  inner.find('html').css('overflow', 'hidden')
 
   // The observer must be installed before the first resizer() call (otherwise
-  // we may miss a modification between the resizer() call an observer
+  // we may miss a modification between the resizer() call and observer
   // installation).
   var observer = new WebKitMutationObserver(resizer);
   observer.observe(inner[0], { attributes: true, subtree: true } );
   resizer();
   toggleFrame(frame);
+}
+
+function hideAllDiffs(tables) {
+  // Hide all currently showing inline diffs.
+  tables.find('.rb-showingDiff').removeClass('rb-showingDiff');
+  tables.find('.rb-frameDiv').slideUp(500, function() {
+    $(this).closest('.rb-frameRow').hide().data({'showingFrameId': null});
+  });
 }
 
 function updatePatchTables() {
@@ -216,27 +181,23 @@ function updatePatchTables() {
     var enableInline = items['enableInlineDiffs'];
     var createViewAll = items['createViewAllButtons'];
 
-    $('.rb-modified').toggle(createViewAll);
-    $('.rb-original').toggle(!createViewAll);
+    $('.rb-tableHeader.rb-modified').toggle(createViewAll);
+    $('.rb-tableHeader.rb-original').toggle(!createViewAll);
 
     if (!enableInline) {
-      // Hide all currently showing inline diffs.
-      $('.rb-inlineDiff').hide();
-      $('.rb-frameRow').hide().data({'showingFrameId': null});
-      $('.rb-showingDiff').removeClass('rb-showingDiff');
+      hideAllDiffs($('.rb-patchTable'));
     }
 
-    $('.rb-difflink').off('click');
+    $('.rb-diffLink').off('click');
 
     $('.rb-filename')
-      .toggleClass('rb-difflink', shouldRewrite)
+      .toggleClass('rb-diffLink', shouldRewrite)
       .each(function() {
         this.href = $(this).data(shouldRewrite ? 'diff' : 'patch');
       });
 
     if (enableInline) {
-      $('.rb-difflink')
-        .css('cursor', 'pointer')
+      $('.rb-diffLink')
         .click(function() { createInlineDiff($(this)); return false; });
     }
   });
@@ -247,72 +208,117 @@ function frameIdSuffixFromDiffHref(href) {
   return '_frame_' + href.match('/diff2?/([^/]*)/')[1].replace(':', '_');
 }
 
-// Inject some data into various DOM elements to make modifications (and
+function addShowButton(cell, columnId, text) {
+  if (cell.find('.' + columnId).length > 0) return;
+
+  var button = $('<input type="button" value="' + text + '"/>')
+    .addClass('rb-headerButton')
+    .addClass('rb-blueButton')
+    .addClass(columnId)
+    .data({ columnId: columnId })
+    .click(function() {
+      cell.closest('.rb-patchTable').find('a.' + columnId).click();
+    })
+  var siblingsBefore = cell.find('input').filter(function() {
+    return $(this).data().columnId < columnId;
+  });
+  if (siblingsBefore.length > 0) {
+    siblingsBefore.last().after(button);
+  } else {
+    cell.prepend(button);
+  }
+}
+
+var currentId = 0;
+// Inject some data and elements to the DOM to make modifications (and
 // reversals) easier.
-function preparePatchSets() {
+function injectDataAndNodes() {
   // Modify table header rows.
-  $('.issue-list table:not(.rb-patchtable)')
-      .addClass('rb-patchtable')
-      .find('tr:first-of-type')
-      .addClass('rb-tableheader')
-      .each(function() {
-        var hideAll = $('<div/>')
-          .addClass('rb-hideAll');
-        var showDiff = $('<div/>')
-          .addClass('rb-showDiff');
-        var showDelta = $('<div/>')
-          .addClass('rb-showDelta');
+  $('.issue-list table:not(.rb-patchTable)')
+    .addClass('rb-patchTable')
+    .find('tr:first-of-type')
+    .addClass('rb-tableHeader')
+    .addClass('rb-original')
+    .each(function() {
+      var modified = $(this).clone()
+        .removeClass('rb-original')
+        .addClass('rb-modified')
+        .hide();
+      $(this).after(modified);
 
-        var original = $('<div/>').addClass('rb-original');
-        var modified = $('<div/>').addClass('rb-modified');
+      modified.children().addClass('rb-headerCell');
 
-        var unifiedCell = $(this).children().eq(1);
-        var diffCell = unifiedCell.next();
-        var deltaCell = diffCell.next();
+      var unified = modified.children().eq(1)
+        .addClass('rb-unifiedHeader');
+      var hideAll = $('<div/>')
+        .addClass('rb-hideAll')
+        .css('float', 'right');
+      hideAll.append(
+        $('<input type="button" value="Hide all"/>')
+          .addClass('rb-headerButton')
+          .addClass('rb-redButton')
+          .click(function() {
+            hideAllDiffs($(this).closest('.rb-patchTable'));
+          }));
 
-        var unifiedModified = modified.clone()
-          .append(unifiedCell.html())
-          .append(hideAll)
+      unified.append(hideAll);
 
-        var diffModified = modified.clone()
-          .append(showDiff)
+      var diff = unified.next()
+        .addClass('rb-diffHeader')
+        .html('');
 
-        var deltaModified = modified.clone()
-          .append(showDelta)
+      addShowButton(diff, 'rb-columnView', 'Show All');
 
-        unifiedCell.html(original.clone().append(unifiedCell.html()));
-        diffCell.html(original.clone().append(diffCell.html()));
-        deltaCell.html(original.clone().append(deltaCell.html()));
+      var delta = diff.next()
+        .addClass('rb-deltaHeader')
+        .html('');
+    });
 
-        unifiedCell.append(unifiedModified);
-        diffCell.append(diffModified);
-        deltaCell.append(deltaModified);
-      });
-  var difflinks = $('.issue-list a[href*="/diff"]:not(.rb-difflink)')
-    .addClass('rb-difflink');
+
+  var difflinks = $('.issue-list a[href*="/diff"]:not(.rb-diffLink)')
+    .addClass('rb-diffLink');
 
   // Update rows first since frameId is based on rowId
-  difflinks.closest('tr:not(.rb-diffrow)')
-      .addClass('rb-diffrow')
-      .each(function() {
-        var row = $(this);
-        var rowId = row.data().rowId;
-        if (!rowId) {
-          rowId = "inline_diff_row_" + currentId++;
-        }
-        $(this).find('a').andSelf().data({ rowId: rowId });
-      });
+  difflinks.closest('tr:not(.rb-diffRow)')
+    .addClass('rb-diffRow')
+    .each(function() {
+      rowId = "inline_diff_row_" + currentId++;
+
+      $(this).find('a').andSelf().data({ rowId: rowId });
+
+      newRow = $('<tr id="' + rowId + '"/>')
+        .addClass('rb-frameRow')
+        .data({ showingFrameId: null })
+        .append(
+          $('<td colspan=1000/>')
+            .append(
+              $('<div/>')
+                .addClass('rb-frameDiv')
+                .hide()
+                .css({
+                  overflow: 'hidden',
+                  width: '100%'
+                  })
+                .css('text-align', 'center')))
+        .hide();
+      $(this).after(newRow);
+    });
 
   difflinks.each(function() {
-      var href = this.href;
-      var frameId = $(this).data().rowId + frameIdSuffixFromDiffHref(href);
-      $(this).data({ frameId: frameId, diff: href });
-      var issueList = $(this).closest('.issue-list');
-      var diffColumns = issueList.data().diffColumns;
-      var columnId = 'rb-column' + $(this).html();
-      $(this).addClass(columnId);
-      var header = $(this).closest('.issue-list').find('.rb-patchHeader');
-    })
+    var href = this.href;
+    var frameId = $(this).data().rowId + frameIdSuffixFromDiffHref(href);
+    $(this).data({ frameId: frameId, diff: href });
+    var issueList = $(this).closest('.issue-list');
+    var diffColumns = issueList.data().diffColumns;
+    var html = $(this).html().trim();
+    var columnId = 'rb-column' + html;
+    $(this).addClass(columnId);
+    // For columnId == 'rb-columnView' the button is installed above.
+    if (columnId != 'rb-columnView') {
+      var cell = $(this).closest('.issue-list').find('.rb-deltaHeader');
+      addShowButton(cell, columnId, 'All ' + html);
+    }
+  })
 
   $('.issue-list a[href*="/patch/"]:not(.rb-filename)')
     .addClass('rb-filename')
@@ -326,14 +332,17 @@ function preparePatchSets() {
 }
 
 function setupPatchSetObserver() {
+  // TODO: These observers are only needed to detect the loading of patch set
+  // data, we should be able to disconnect them from each patch set after its
+  // loaded.
   var observer = new WebKitMutationObserver(function() {
-    preparePatchSets();
+    injectDataAndNodes();
     updatePatchTables();
   });
   $('div[id^=ps-]').each(function () { observer.observe(this, { childList: true }); });
 }
 setupPatchSetObserver();
-preparePatchSets();
+injectDataAndNodes();
 updatePatchTables();
 
 // The baseurl is often long and makes the whole left pane too long... hide it.
