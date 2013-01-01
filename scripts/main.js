@@ -1,70 +1,37 @@
-chrome.extension.sendMessage({}, function(response) {});
+chrome.extension.sendMessage({action: 'show_page_action'}, function(response) {});
 
-// It's expensive to inject all the iframes on startup, so do it lazily.
-function getFrameById(id) {
-  var frame = $("#" + id);
+function createFrameForLink(link) {
+  var id = link.data().frameId;
+  var href = link.data().diff;
+  var frame = $('<iframe id="' + id + '"/>')
+    .addClass('rb-inlineDiff')
+    .css('width', '100%')
+    .attr('frameBorder', '0')
+    .data({ href: href })
+    .hide();
+  var rowId = id.match('inline_diff_row_[0-9]*')[0];
+  $('#' + rowId)
+    .find('.rb-frameDiv')
+    .append(frame);
+  return frame;
+}
+
+function getFrameForLink(link) {
+  var frame = $("#" + link.data().frameId);
   if (frame.length == 0) {
-    frame = $('<iframe id="' + id + '" style="width:100%" frameBorder="0"/>')
-      .hide()
-      .addClass('rb-inlineDiff');
-    var rowId = id.match('inline_diff_row_[0-9]*')[0];
-    $('#' + rowId)
-      .find('.rb-frameDiv')
-      .append(frame);
+    frame = createFrameForLink(link);
   }
   return frame;
 }
 
-function hideFrame(row) {
-  var currFrame = $('#' + row.data().showingFrameId);
-  if (currFrame.length < 1) {
-    throw new Error('No current frame found?!?!');
-  }
-  row.data({ showingFrameId: null });
-
-  row.find('.rb-frameDiv').slideUp(500, function() {
-    row.hide();
-    currFrame.hide();
-  });
+function getFrameForColumnId(row, id) {
+  var difflink = row.find('.' + id);
+  if (difflink.length == 0) return null;
+  return getFrameForLink(difflink);
 }
 
-function swapFrame(row, frame) {
-  var currFrame = $('#' + row.data().showingFrameId);
-  if (currFrame.length < 1) {
-    throw new Error('No current frame found?!?!');
-  }
-  currFrame.hide();
-  frame.show();
-  row.data({ showingFrameId: frame.attr('id') });
-  row.find('.rb-frameDiv').slideDown(500);
-}
-
-function showFrame(row, frame) {
-  var currFrameId = row.data().showingFrameId;
-  if (currFrameId) {
-    swapFrame(row, frame);
-    return;
-  }
-
-  row.show();
-  frame.show();
-  row.data({ showingFrameId: frame.attr('id') });
-  row.find('.rb-frameDiv').slideDown(500);
-}
-
-function toggleFrame(frame) {
-  var row = frame.closest('tr'),
-    frameId = frame.attr('id'),
-    currFrameId = row.data().showingFrameId;
-  if (currFrameId == frameId) {
-    hideFrame(row);
-  } else {
-    if (currFrameId) {
-      swapFrame(row, frame);
-    } else {
-      showFrame(row, frame);
-    }
-  }
+function updateShowingFrameId(row, newId) {
+  row.data({ showingFrameId: newId });
   updateLinksForRow(row);
 }
 
@@ -80,38 +47,106 @@ function updateLinksForRow(row) {
   });
 }
 
-function queueFrameLoad(frame, src) {
-  var priority = frame.closest('tr').index();
+function hideFrame(row) {
+  var frameId = row.data().showingFrameId;
+  if (!frameId) {
+    return;
+  }
+
+  updateShowingFrameId(row, null);
+  var currFrame = $('#' + frameId);
+  cancelLoadIfPending(frameId);
+  currFrame.data({ showOnLoad: true });
+  row.find('.rb-frameDiv').slideUp(500, function() {
+    row.hide();
+    currFrame.hide();
+  });
+}
+
+function swapFrame(row, frame) {
+  var frameId = row.data().showingFrameId;
+  var currFrame = $('#' + frameId);
+  cancelLoadIfPending(frameId);
+  currFrame.hide();
+  frame.show();
+  updateShowingFrameId(row, frame.attr('id'));
+}
+
+function showFrame(row, frame) {
+  var currFrameId = row.data().showingFrameId;
+  if (currFrameId) {
+    swapFrame(row, frame);
+    return;
+  }
+
+  row.show();
+  frame.show();
+  updateShowingFrameId(row, frame.attr('id'));
+  row.find('.rb-frameDiv').slideDown(500);
+}
+
+function toggleFrame(frame) {
+  if (!frame.data().frameLoaded) {
+    frame.data({ showOnLoad: true });
+    queueFrameLoad(frame);
+    return;
+  }
+  var row = frame.closest('tr'),
+    frameId = frame.attr('id'),
+    currFrameId = row.data().showingFrameId;
+  if (currFrameId == frameId) {
+    hideFrame(row);
+  } else {
+    showFrame(row, frame);
+  }
+}
+
+function showSpinner(row) {
+  // FIXME: show the spinner.
+  hideFrame(row);
+  row.show();
+}
+
+function hideAllDiffs(tables) {
+  // Hide all currently showing inline diffs.
+  tables.find('.rb-frameRow').each(function() {
+    hideFrame($(this));
+  });
+}
+
+function queueFrameLoad(frame) {
+  var row = frame.closest('tr');
+  var priority = row.index();
   var frameId = frame.attr('id');
+
+  showSpinner(row);
+
   pushLoadQueue(frameId, priority, function(finishedCallback) {
-    frame.attr('src', src);
-    frame.one('load', function() {
-      iframeLoaded(frame.attr('id'));
-      finishedCallback();
+    chrome.storage.sync.get(['autoSetColumnWidth', 'columnWidthMap'], function(items) {
+      var src = frame.data().href;
+      if (frame.attr('src') == src) {
+        // Frame is already loaded or loading.
+        return;
+      }
+      if (items['autoSetColumnWidth']) {
+        var filetype = src.substr(src.lastIndexOf('.') + 1);
+        if (filetype in items['columnWidthMap'])
+          src += '?column_width=' + items['columnWidthMap'][filetype];
+      }
+      frame.attr('src', src);
+      frame.one('load', function() {
+        iframeLoaded(frame.attr('id'));
+        if (frame.data().showOnLoad) {
+          toggleFrame(frame);
+        }
+        finishedCallback();
+      });
     });
   });
 }
 
-function createInlineDiff(el) {
-  chrome.storage.sync.get(['autoSetColumnWidth', 'columnWidthMap'], function(items) {
-    var newSrc = el.data().diff;
-    if (items['autoSetColumnWidth']) {
-      var filetype = newSrc.substr(newSrc.lastIndexOf('.') + 1);
-      if (filetype in items['columnWidthMap'])
-        newSrc += '?column_width=' + items['columnWidthMap'][filetype];
-    }
-    var frame = getFrameById(el.data().frameId);
-    if (frame.data().frameLoaded) {
-      toggleFrame(frame);
-      return;
-    }
-    var row = $('#' + el.data().rowId);
-    if (row.data().showingFrameId) {
-      hideFrame(row);
-    }
-    row.show();
-    queueFrameLoad(frame, newSrc);
-  });
+function toggleFrameForLink(link) {
+  toggleFrame(getFrameForLink(link));
 }
 
 function removeDiffChrome(page) {
@@ -164,15 +199,6 @@ function iframeLoaded(id) {
   var observer = new WebKitMutationObserver(resizer);
   observer.observe(inner[0], { attributes: true, subtree: true } );
   resizer();
-  toggleFrame(frame);
-}
-
-function hideAllDiffs(tables) {
-  // Hide all currently showing inline diffs.
-  tables.find('.rb-showingDiff').removeClass('rb-showingDiff');
-  tables.find('.rb-frameDiv').slideUp(500, function() {
-    $(this).closest('.rb-frameRow').hide().data({'showingFrameId': null});
-  });
 }
 
 function updatePatchTables() {
@@ -198,7 +224,10 @@ function updatePatchTables() {
 
     if (enableInline) {
       $('.rb-diffLink')
-        .click(function() { createInlineDiff($(this)); return false; });
+        .click(function() {
+          toggleFrameForLink($(this));
+          return false;
+        });
     }
   });
 }
@@ -206,6 +235,18 @@ chrome.storage.onChanged.addListener(updatePatchTables, ['rewriteUnifiedLinks', 
 
 function frameIdSuffixFromDiffHref(href) {
   return '_frame_' + href.match('/diff2?/([^/]*)/')[1].replace(':', '_');
+}
+
+function showAllFramesInColumn(table, columnId) {
+  table.find('.rb-diffRow').each(function() {
+    var frame = getFrameForColumnId($(this), columnId);
+    console.log(columnId, $(this).attr('id'), frame);
+    if (frame) {
+      toggleFrame(frame);
+    } else {
+      hideFrame($(this).next());
+    }
+  });
 }
 
 function addShowButton(cell, columnId, text) {
@@ -217,8 +258,8 @@ function addShowButton(cell, columnId, text) {
     .addClass(columnId)
     .data({ columnId: columnId })
     .click(function() {
-      cell.closest('.rb-patchTable').find('a.' + columnId).click();
-    })
+      showAllFramesInColumn(cell.closest('.rb-patchTable'), columnId);
+    });
   var siblingsBefore = cell.find('input').filter(function() {
     return $(this).data().columnId < columnId;
   });
@@ -313,6 +354,7 @@ function injectDataAndNodes() {
     var html = $(this).html().trim();
     var columnId = 'rb-column' + html;
     $(this).addClass(columnId);
+    $(this).data({ columnId: columnId});
     // For columnId == 'rb-columnView' the button is installed above.
     if (columnId != 'rb-columnView') {
       var cell = $(this).closest('.issue-list').find('.rb-deltaHeader');

@@ -1,7 +1,7 @@
 chrome.extension.onMessage.addListener(
   function(request, sender, sendResponse) {
-    console.log(sender);
-    console.log(sendResponse);
-    chrome.pageAction.show(sender.tab.id);
-    sendResponse({});
+    if (request.action == 'show_page_action') {
+      chrome.pageAction.show(sender.tab.id);
+      sendResponse({});
+    }
   });

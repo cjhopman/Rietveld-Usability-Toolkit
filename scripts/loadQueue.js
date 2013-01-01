@@ -1,15 +1,20 @@
 // A simple priority/throttling mechanism for frame loads.
 var loadQueue = [];
 var loading = 0;
-// TODO: Does staggering loads defeat the purpose of the queueThrottle?
+// TODO: Does allowing staggered loads defeat the purpose of the queueThrottle?
 function shiftLoadQueue() {
   // TODO: Use item priority
   return loadQueue.shift();
 }
 function cancelLoadIfPending(id) {
-  // TODO: implement
+  for (var i = loadQueue.length - 1; i >= 0; i--) {
+    if (loadQueue[i].id == id) {
+      loadQueue.remove(i);
+    }
+  }
 }
 function pushLoadQueue(id, priority, fn) {
+  cancelLoadIfPending(id);
   loadQueue.push({ id: id, priority: priority, fn: fn });
   // If a bunch of pushes are triggered at the same time, we want to wait a bit
   // before pumping in case a higher priority load is about to be pushed.

@@ -28,7 +28,7 @@
       "all_frames": true,
       "js": [
         "lib/jquery-1.8.3.min.js",
-        "scripts/jquery_modify.js",
+        "scripts/lib.js",
         "scripts/settings.js",
         "scripts/storage.js"
       ],
