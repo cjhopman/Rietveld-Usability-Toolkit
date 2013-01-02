@@ -69,6 +69,8 @@ function decorateChromeApis() {
             break;
           case 'dict':
             break;
+          case 'number':
+            break;
           default:
             throw new Error('Unrecognized type: ' + type);
         }

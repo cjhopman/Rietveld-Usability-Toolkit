@@ -65,7 +65,7 @@ var manifest = {
     },
     "queueThrottle": {
       "type": "number",
-      "default": 200,
+      "default": 250,
       "description": "Delay between successive frame loads."
     }
   }
