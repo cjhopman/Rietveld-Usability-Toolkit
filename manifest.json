@@ -1,5 +1,5 @@
 {
-  "name": "Rietveld Prettifier",
+  "name": "Rietveld Beautifier",
   "version": "0.1",
   "manifest_version" : 2,
   "description": "This is a description",
@@ -16,7 +16,7 @@
       "19": "icons/19.png",
       "38": "icons/38.png"
     },
-    "default_title" : "Rietveld Prettifier",
+    "default_title" : "Rietveld Beautifier",
     "default_popup" : "settings/popup.html"
   },
   "content_scripts": [
