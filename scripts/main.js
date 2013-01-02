@@ -351,6 +351,12 @@ var currentId = 0;
 // Inject some data and elements to the DOM to make modifications (and
 // reversals) easier.
 function injectDataAndNodes() {
+  // FIXME: this is a hack so that we only perform changes on issue details
+  // pages (not search result pages). Instead, we should use programmatic
+  // injection and only inject scripts/css on the pages that we want.
+  if ($('.issue-details').length == 0) return;
+
+
   // Modify table header rows.
   $('.issue-list table:not(.rb-patchTable)')
     .addClass('rb-patchTable')

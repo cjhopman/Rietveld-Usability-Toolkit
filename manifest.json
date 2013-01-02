@@ -22,8 +22,9 @@
   "content_scripts": [
     {
       "matches": [
-        "http://codereview.chromium.org/*",
-        "https://codereview.chromium.org/*"
+        "*://codereview.appspot.com/*",
+        "*://codereview.chromium.org/*",
+        "*://chromereviews.googleplex.com/*"
       ],
       "all_frames": true,
       "js": [
@@ -36,8 +37,9 @@
     },
     {
       "matches": [
-        "http://codereview.chromium.org/*",
-        "https://codereview.chromium.org/*"
+        "*://codereview.appspot.com/*",
+        "*://codereview.chromium.org/*",
+        "*://chromereviews.googleplex.com/*"
       ],
       "all_frames": true,
       "js": [
@@ -52,8 +54,9 @@
     },
     {
       "matches": [
-        "http://codereview.chromium.org/*/diff*",
-        "https://codereview.chromium.org/*/diff*"
+        "*://codereview.appspot.com/*/diff*",
+        "*://codereview.chromium.org/*/diff*",
+        "*://chromereviews.googleplex.com/*/diff*"
       ],
       "all_frames": true,
       "js": [
