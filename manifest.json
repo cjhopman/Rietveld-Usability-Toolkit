@@ -22,6 +22,7 @@
   "content_scripts": [
     {
       "matches": [
+        "*://chromiumcodereview.appspot.com/*",
         "*://codereview.appspot.com/*",
         "*://codereview.chromium.org/*",
         "*://chromereviews.googleplex.com/*"
@@ -37,6 +38,7 @@
     },
     {
       "matches": [
+        "*://chromiumcodereview.appspot.com/*",
         "*://codereview.appspot.com/*",
         "*://codereview.chromium.org/*",
         "*://chromereviews.googleplex.com/*"
@@ -54,6 +56,7 @@
     },
     {
       "matches": [
+        "*://chromiumcodereview.appspot.com/*/diff*",
         "*://codereview.appspot.com/*/diff*",
         "*://codereview.chromium.org/*/diff*",
         "*://chromereviews.googleplex.com/*/diff*"
