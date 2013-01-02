@@ -9,6 +9,7 @@ function createFrameForLink(link) {
     .attr('frameBorder', '0')
     .data({ href: href })
     .hide();
+  // TODO: Can we defer injecting the frame until we actually start loading it?
   var rowId = id.match('inline_diff_row_[0-9]*')[0];
   $('#' + rowId)
     .find('.rb-frameDiv')
@@ -38,29 +39,25 @@ function updateShowingFrameId(row, newId) {
 // Update the links in the previous row so that when an inline diff is shown,
 // the proper link is highlighted.
 function updateLinksForRow(row) {
+  var showingFrameId = row.data().showingFrameId;
   var links = row.prev().find('.rb-diffLink');
-  links.each(function() {
-    var anchor = $(this);
-    var frameId = anchor.data().frameId;
-    var isShowing = row.data().showingFrameId == frameId;
-    anchor.toggleClass('rb-showingDiff', isShowing);
-  });
+  links.removeClass('rb-showingDiff');
+  links.filter(function() {
+      return $(this).data().frameId == row.data().showingFrameId
+    }).addClass('rb-showingDiff');
 }
 
-function hideFrame(row) {
-  var frameId = row.data().showingFrameId;
-  if (!frameId) {
-    return;
-  }
+function hideFrame(row, finished) {
+  cancelLoadIfPending(row.data().loadingFrameId);
+  row.data({ loadingFrameId: null });
 
-  updateShowingFrameId(row, null);
+  var frameId = row.data().showingFrameId;
   var currFrame = $('#' + frameId);
-  cancelLoadIfPending(frameId);
-  currFrame.data({ showOnLoad: true });
-  row.find('.rb-frameDiv').slideUp(500, function() {
-    row.hide();
-    currFrame.hide();
-  });
+  updateShowingFrameId(row, null);
+  row.find('.rb-frameDiv').slideUp(400, function() {
+      row.hide();
+      if (finished) finished();
+    });
 }
 
 function swapFrame(row, frame) {
@@ -72,22 +69,26 @@ function swapFrame(row, frame) {
   updateShowingFrameId(row, frame.attr('id'));
 }
 
-function showFrame(row, frame) {
+function showFrame(row, frame, finished) {
   var currFrameId = row.data().showingFrameId;
   if (currFrameId) {
     swapFrame(row, frame);
     return;
   }
 
+  var spinner = row.find('.rb-spinner');
+  var spinnerShowing = row.data().spinnerShowing;
+
   row.show();
   frame.show();
   updateShowingFrameId(row, frame.attr('id'));
-  row.find('.rb-frameDiv').slideDown(500);
+  row.find('.rb-frameDiv').slideDown(400, function() {
+      if (finished) finished();
+    });
 }
 
 function toggleFrame(frame) {
   if (!frame.data().frameLoaded) {
-    frame.data({ showOnLoad: true });
     queueFrameLoad(frame);
     return;
   }
@@ -101,10 +102,24 @@ function toggleFrame(frame) {
   }
 }
 
-function showSpinner(row) {
+function showSpinner(row, duration, finished) {
+  if (!duration) duration = 400;
   // FIXME: show the spinner.
-  hideFrame(row);
-  row.show();
+  hideFrame(row, function() {
+      row.show();
+      row.data({ spinnerShowing: true });
+      row.find('.rb-spinner').slideDown(duration, function() {
+          if (finished) finished();
+        });
+    });
+}
+
+function hideSpinner(row, duration, finished) {
+  if (!duration) duration = 400;
+  row.data({ spinnerShowing: false });
+  row.find('.rb-spinner').slideUp(duration, function() {
+      if (finished) finished();
+    });
 }
 
 function hideAllDiffs(tables) {
@@ -118,10 +133,12 @@ function queueFrameLoad(frame) {
   var row = frame.closest('tr');
   var priority = row.index();
   var frameId = frame.attr('id');
+  var frameDiv = frame.closest('.rb-frameDiv');
 
-  showSpinner(row);
+  showSpinner(row, frameId);
+  row.data({ loadingFrameId: frameId });
 
-  pushLoadQueue(frameId, priority, function(finishedCallback) {
+  pushLoadQueue(frameId, priority, function(finished) {
     chrome.storage.sync.get(['autoSetColumnWidth', 'columnWidthMap'], function(items) {
       var src = frame.data().href;
       if (frame.attr('src') == src) {
@@ -133,13 +150,18 @@ function queueFrameLoad(frame) {
         if (filetype in items['columnWidthMap'])
           src += '?column_width=' + items['columnWidthMap'][filetype];
       }
+      frameDiv.css('top', '-50px');
       frame.attr('src', src);
       frame.one('load', function() {
         iframeLoaded(frame.attr('id'));
-        if (frame.data().showOnLoad) {
-          toggleFrame(frame);
+        if (row.data().loadingFrameId == frameId) {
+          showFrame(row, frame, function() {
+            hideSpinner(row, 1, function() {
+                frameDiv.css('top', '0px');
+              });
+          });
         }
-        finishedCallback();
+        if (finished) finished();
       });
     });
   });
@@ -261,13 +283,63 @@ function addShowButton(cell, columnId, text) {
       showAllFramesInColumn(cell.closest('.rb-patchTable'), columnId);
     });
   var siblingsBefore = cell.find('input').filter(function() {
-    return $(this).data().columnId < columnId;
+    var otherId = $(this).data().columnId;
+    if (otherId.length < columnId.length) return true;
+    return otherId < columnId;
   });
   if (siblingsBefore.length > 0) {
     siblingsBefore.last().after(button);
   } else {
     cell.prepend(button);
   }
+}
+
+function createSpinner() {
+  var spinner = $('<div/>')
+    .addClass('rb-spinner')
+    .css('position', 'relative')
+    .css('z-index', '0')
+    .css('height', '50px');;
+  for (var i = 0; i < 12; i++) {
+    spinner.append($('<div/>').addClass('rb-bar' + i));
+  }
+  return spinner;
+}
+
+function createFrameDiv() {
+  return $('<div/>')
+    .addClass('rb-frameDiv')
+    .css('overflow', 'hidden')
+    .css('position', 'relative')
+    .css('z-index', '1');
+}
+
+function createFrameContainer() {
+  return div = $('<div/>')
+    .addClass('rb-frameContainer')
+    .css('width', '100%')
+    .css('text-align', 'center')
+    .append(createSpinner())
+    .append(createFrameDiv());
+}
+
+function createFrameRow() {
+  return $('<tr id="' + rowId + '"/>')
+    .addClass('rb-frameRow')
+    .data({ showingFrameId: null })
+    .append(
+      $('<td colspan=1000/>')
+        .append(createFrameContainer()))
+    .hide();
+}
+
+function createHideAllButton() {
+  return $('<input type="button" value="Hide all"/>')
+    .addClass('rb-headerButton')
+    .addClass('rb-redButton')
+    .click(function() {
+      hideAllDiffs($(this).closest('.rb-patchTable'));
+    });
 }
 
 var currentId = 0;
@@ -294,13 +366,7 @@ function injectDataAndNodes() {
       var hideAll = $('<div/>')
         .addClass('rb-hideAll')
         .css('float', 'right');
-      hideAll.append(
-        $('<input type="button" value="Hide all"/>')
-          .addClass('rb-headerButton')
-          .addClass('rb-redButton')
-          .click(function() {
-            hideAllDiffs($(this).closest('.rb-patchTable'));
-          }));
+      hideAll.append(createHideAllButton());
 
       unified.append(hideAll);
 
@@ -327,22 +393,7 @@ function injectDataAndNodes() {
 
       $(this).find('a').andSelf().data({ rowId: rowId });
 
-      newRow = $('<tr id="' + rowId + '"/>')
-        .addClass('rb-frameRow')
-        .data({ showingFrameId: null })
-        .append(
-          $('<td colspan=1000/>')
-            .append(
-              $('<div/>')
-                .addClass('rb-frameDiv')
-                .hide()
-                .css({
-                  overflow: 'hidden',
-                  width: '100%'
-                  })
-                .css('text-align', 'center')))
-        .hide();
-      $(this).after(newRow);
+      $(this).after(createFrameRow(rowId));
     });
 
   difflinks.each(function() {
@@ -406,3 +457,13 @@ chrome.storage.onChanged.addListener(function(changes, namespace) {
   hideBaseUrl();
 }, 'hideBaseUrl');
 
+
+function enableAnimations() {
+  chrome.storage.sync.get('enableAnimations', function(items) {
+    $.fx.off = !items['enableAnimations'];
+  });
+}
+enableAnimations();
+chrome.storage.onChanged.addListener(function(changes, namespace) {
+  enableAnimations();
+}, 'enableAnimations');

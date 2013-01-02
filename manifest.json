@@ -45,7 +45,8 @@
         "scripts/main.js"
       ],
       "css": [
-        "css/main.css"
+        "css/main.css",
+        "css/spinner.css"
       ],
       "run_at": "document_idle"
     },

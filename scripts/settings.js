@@ -23,6 +23,11 @@ var manifest = {
       "default": true,
       "description": "Hide base URL section."
     },
+    "enableAnimations": {
+      "type": "bool",
+      "default": true,
+      "description": "Animate showing/hiding inline diffs."
+    },
     "autoSetColumnWidth": {
       "type": "bool",
       "default": true,
