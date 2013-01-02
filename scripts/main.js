@@ -168,8 +168,9 @@ function queueFrameLoad(frame) {
       frame.one('load', function() {
         iframeLoaded(frameId);
         if (row.data().loadingFrameId == frameId) {
+          row.find('.rb-frameDiv').css('min-height', '50px');
           showFrame(row, frame, function() {
-            hideSpinner(row);
+            row.find('.rb-frameDiv').css('min-height', '');
           });
         }
         if (finished) finished();
@@ -315,7 +316,6 @@ function createFrameDiv() {
   return $('<div/>')
     .addClass('rb-frameDiv')
     .css('overflow', 'hidden')
-    .css('min-height', '50px')
     .hide();
 }
 
