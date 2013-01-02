@@ -426,6 +426,8 @@ function injectDataAndNodes() {
 
   $('.issue-list a[href*="/patch/"]:not(.rb-filename)')
     .addClass('rb-filename')
+    .addClass('rb-columnView')
+    .data({ columnId: 'rb-columnView'})
     .each(function() {
       var href = this.href;
       var diffHref = href.substr(0, href.lastIndexOf('/') + 1).replace('patch', 'diff') + this.innerHTML.trim();
