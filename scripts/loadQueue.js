@@ -7,10 +7,8 @@ function shiftLoadQueue() {
   return loadQueue.shift();
 }
 function cancelLoadIfPending(id) {
-  console.log(id, loadQueue);
   for (var i = loadQueue.length - 1; i >= 0; i--) {
     if (loadQueue[i].id == id) {
-      console.log('Removing it');
       loadQueue.remove(i);
     }
   }

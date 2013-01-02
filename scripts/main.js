@@ -9,25 +9,23 @@ function createFrameForLink(link) {
     .attr('frameBorder', '0')
     .data({ href: href })
     .hide();
-  // TODO: Can we defer injecting the frame until we actually start loading it?
-  var rowId = id.match('inline_diff_row_[0-9]*')[0];
-  $('#' + rowId)
-    .find('.rb-frameDiv')
-    .append(frame);
+
+  // Injecting the frame into the page is deferred until the load actually
+  // begins (i.e. it's popped from the load queue). This is done because there
+  // is a noticeable delay when injecting an iframe into the page, and we can
+  // hide that delay with the one caused by loading the iframe. This is
+  // particularly helpful for the "All xxx" buttons.
   return frame;
 }
 
+// Returns an empty collection if the frame hasn't been created.
 function getFrameForLink(link) {
-  var frame = $("#" + link.data().frameId);
-  if (frame.length == 0) {
-    frame = createFrameForLink(link);
-  }
-  return frame;
+  return $("#" + link.data().frameId);
 }
 
 function getFrameForColumnId(row, id) {
   var difflink = row.find('.' + id);
-  if (difflink.length == 0) return null;
+  if (difflink.length == 0) return $();
   return getFrameForLink(difflink);
 }
 
@@ -54,9 +52,12 @@ function hideFrame(row, finished) {
   var frameId = row.data().showingFrameId;
   var currFrame = $('#' + frameId);
   updateShowingFrameId(row, null);
-  row.find('.rb-frameDiv').slideUp(400, function() {
-      row.hide();
-      if (finished) finished();
+  hideSpinner(row, function() {
+      row.find('.rb-frameDiv').slideUp(400, function() {
+          row.hide();
+          currFrame.hide();
+          if (finished) finished();
+        });
     });
 }
 
@@ -76,11 +77,9 @@ function showFrame(row, frame, finished) {
     return;
   }
 
-  var spinner = row.find('.rb-spinner');
-  var spinnerShowing = row.data().spinnerShowing;
-
   row.show();
   frame.show();
+  hideSpinner(row);
   updateShowingFrameId(row, frame.attr('id'));
   row.find('.rb-frameDiv').slideDown(400, function() {
       if (finished) finished();
@@ -89,7 +88,6 @@ function showFrame(row, frame, finished) {
 
 function toggleFrame(frame) {
   if (!frame.data().frameLoaded) {
-    queueFrameLoad(frame);
     return;
   }
   var row = frame.closest('tr'),
@@ -102,22 +100,31 @@ function toggleFrame(frame) {
   }
 }
 
-function showSpinner(row, duration, finished) {
-  if (!duration) duration = 400;
-  // FIXME: show the spinner.
-  hideFrame(row, function() {
-      row.show();
-      row.data({ spinnerShowing: true });
-      row.find('.rb-spinner').slideDown(duration, function() {
-          if (finished) finished();
-        });
+function toggleFrameForColumnId(row, column) {
+  var difflink = row.find('.' + column);
+  if (difflink.length == 0) {
+    hideFrame(row.next());
+  } else {
+    var frame = getFrameForColumnId(row, column);
+    if (frame.length > 0) {
+      toggleFrame(frame);
+    } else {
+      queueFrameLoad(createFrameForLink(difflink));
+    }
+  }
+}
+
+function showSpinner(row, finished) {
+  row.show();
+  row.data({ spinnerShowing: true });
+  row.find('.rb-spinner').show(0, function() {
+      if (finished) finished();
     });
 }
 
-function hideSpinner(row, duration, finished) {
-  if (!duration) duration = 400;
+function hideSpinner(row, finished) {
   row.data({ spinnerShowing: false });
-  row.find('.rb-spinner').slideUp(duration, function() {
+  row.find('.rb-spinner').hide(0, function() {
       if (finished) finished();
     });
 }
@@ -129,46 +136,52 @@ function hideAllDiffs(tables) {
   });
 }
 
-function queueFrameLoad(frame) {
-  var row = frame.closest('tr');
-  var priority = row.index();
-  var frameId = frame.attr('id');
-  var frameDiv = frame.closest('.rb-frameDiv');
+function maybeAppendColumnWidth(src, items) {
+  if (items['autoSetColumnWidth']) {
+    var filetype = src.substr(src.lastIndexOf('.') + 1);
+    if (filetype in items['columnWidthMap'])
+      src += '?column_width=' + items['columnWidthMap'][filetype];
+  }
+  return src;
+}
 
-  showSpinner(row, frameId);
+function queueFrameLoad(frame) {
+  var frameId = frame.attr('id');
+  var rowId = frameId.match('inline_diff_row_[0-9]*')[0];
+  var row = $('#' + rowId);
+  var priority = row.index();
+
+  hideFrame(row, function() {
+      showSpinner(row);
+    });
+
   row.data({ loadingFrameId: frameId });
 
   pushLoadQueue(frameId, priority, function(finished) {
     chrome.storage.sync.get(['autoSetColumnWidth', 'columnWidthMap'], function(items) {
       var src = frame.data().href;
-      if (frame.attr('src') == src) {
-        // Frame is already loaded or loading.
-        return;
-      }
-      if (items['autoSetColumnWidth']) {
-        var filetype = src.substr(src.lastIndexOf('.') + 1);
-        if (filetype in items['columnWidthMap'])
-          src += '?column_width=' + items['columnWidthMap'][filetype];
-      }
-      frameDiv.css('top', '-50px');
-      frame.attr('src', src);
+      src = maybeAppendColumnWidth(src, items);
+
+      row.find('.rb-frameDiv')
+        .append(frame);
+
       frame.one('load', function() {
-        iframeLoaded(frame.attr('id'));
+        iframeLoaded(frameId);
         if (row.data().loadingFrameId == frameId) {
           showFrame(row, frame, function() {
-            hideSpinner(row, 1, function() {
-                frameDiv.css('top', '0px');
-              });
+            hideSpinner(row);
           });
         }
         if (finished) finished();
       });
+
+      frame.attr('src', src);
     });
   });
 }
 
 function toggleFrameForLink(link) {
-  toggleFrame(getFrameForLink(link));
+  toggleFrameForColumnId(link.closest('.rb-diffRow'), link.data().columnId);
 }
 
 function removeDiffChrome(page) {
@@ -261,13 +274,7 @@ function frameIdSuffixFromDiffHref(href) {
 
 function showAllFramesInColumn(table, columnId) {
   table.find('.rb-diffRow').each(function() {
-    var frame = getFrameForColumnId($(this), columnId);
-    console.log(columnId, $(this).attr('id'), frame);
-    if (frame) {
-      toggleFrame(frame);
-    } else {
-      hideFrame($(this).next());
-    }
+    toggleFrameForColumnId($(this), columnId);
   });
 }
 
@@ -297,9 +304,7 @@ function addShowButton(cell, columnId, text) {
 function createSpinner() {
   var spinner = $('<div/>')
     .addClass('rb-spinner')
-    .css('position', 'relative')
-    .css('z-index', '0')
-    .css('height', '50px');;
+    .css('height', '50px');
   for (var i = 0; i < 12; i++) {
     spinner.append($('<div/>').addClass('rb-bar' + i));
   }
@@ -310,8 +315,8 @@ function createFrameDiv() {
   return $('<div/>')
     .addClass('rb-frameDiv')
     .css('overflow', 'hidden')
-    .css('position', 'relative')
-    .css('z-index', '1');
+    .css('min-height', '50px')
+    .hide();
 }
 
 function createFrameContainer() {
