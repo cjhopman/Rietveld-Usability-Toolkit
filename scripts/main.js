@@ -5,8 +5,6 @@ function createFrameForLink(link) {
   var href = link.data().diff;
   var frame = $('<iframe id="' + id + '"/>')
     .addClass('rb-inlineDiff')
-    .css('width', '100%')
-    .css('margin', 'auto')
     .attr('seamless', true)
     .attr('frameBorder', '0')
     .data({ href: href })
@@ -196,25 +194,30 @@ function toggleFrameForLink(link) {
 }
 
 function removeDiffChrome(page) {
-  var code = page.find(".code");
+  var code = page.find('.code');
   code.children().css('margin', '3px');
   code.parents().andSelf()
     .css('margin', '0')
+    .css('display', 'table')
     .siblings()
       .hide();
-  code.find(".codenav").hide();
+  code.find('.codenav').hide();
+  code.find('#table-top').css('position', '');
+  code.find('#codeTop').hide();
+  code.find('#codeBottom').hide();
 }
 
 function iframeLoaded(id) {
   var frame = $("#" + id);
+  var frameDiv = frame.closest('.rb-frameDiv');
   frame.data({ frameLoaded: true });
   var row = frame.closest('tr');
 
   var inner = frame.contents();
 
   var resizer = function() {
-    var newHeight = inner.outerHeight(true);
-    var newWidth = inner.outerWidth(true);
+    var newHeight = inner.find('html').height();
+    var newWidth = inner.find('html').width();
     if (frame.css('height') != newHeight || frame.css('width') != newWidth) {
       // FIXME: This is a total hack. When the page in the iframe gets
       // smaller, its document still fills the iframe, and so newHeight/Width
@@ -222,29 +225,25 @@ function iframeLoaded(id) {
       // too small, because that causes the outer page to scroll), the
       // document will then shrink to the size of its interior. There should
       // be a better way to do this.
-      newHeight = inner.find('html').height();
-      newWidth = inner.find('html').width();
-      frame.css('height', newHeight).css('width', newWidth);
-      newHeight = inner.outerHeight(true);
-      newWidth = inner.outerWidth(true);
-      frame.css('height', newHeight).css('width', newWidth);
+      //frame.css('height', newHeight).css('width', newWidth);
+      frameDiv.css('height', newHeight).css('width', newWidth);
     }
   };
 
   // FIXME: more hacks. Without this, the new frame flashes at the left edge
   // of the row before moving to the center.
-  frame.css('height', '0px').css('width', '0px');
+  //frameDiv.css('height', frame.height()).css('width', frame.width());
   removeDiffChrome(inner);
-  // Sometimes we get scrollbars in the frame when we don't actually need them.
-  // Let's hammer those away. (What happens when we actually need them?)
-  inner.find('html').css('overflow', 'hidden')
+  inner.find('html').css('margin', 'auto');
 
   // The observer must be installed before the first resizer() call (otherwise
   // we may miss a modification between the resizer() call and observer
   // installation).
   var observer = new WebKitMutationObserver(resizer);
-  observer.observe(inner[0], { attributes: true, subtree: true } );
-  resizer();
+  observer.observe(inner.find('html')[0], { attributes: true, subtree: true } );
+  // FIXME: Calling resizer() here should work, but somehow it causes a bug
+  // where the frame sometimes overlaps the next row after load.
+  //resizer();
 }
 
 function updatePatchTables() {
@@ -325,7 +324,7 @@ function createSpinner() {
 function createFrameDiv() {
   return $('<div/>')
     .addClass('rb-frameDiv')
-    .css('overflow', 'hidden')
+    .css('margin', 'auto')
     .hide();
 }
 
