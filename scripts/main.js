@@ -6,6 +6,8 @@ function createFrameForLink(link) {
   var frame = $('<iframe id="' + id + '"/>')
     .addClass('rb-inlineDiff')
     .css('width', '100%')
+    .css('margin', 'auto')
+    .attr('seamless', true)
     .attr('frameBorder', '0')
     .data({ href: href })
     .hide();
@@ -195,9 +197,9 @@ function toggleFrameForLink(link) {
 
 function removeDiffChrome(page) {
   var code = page.find(".code");
+  code.children().css('margin', '3px');
   code.parents().andSelf()
     .css('margin', '0')
-    .css('display', 'table')
     .siblings()
       .hide();
   code.find(".codenav").hide();
@@ -307,13 +309,17 @@ function addShowButton(cell, columnId, text) {
 }
 
 function createSpinner() {
+  var spinnerDiv = $('<div/>')
+    .addClass('rb-spinnerDiv')
+    .css('text-align', 'center');
   var spinner = $('<div/>')
     .addClass('rb-spinner')
-    .css('height', '50px');
+    .css('height', '50px')
+    .css('margin', 'auto');
   for (var i = 0; i < 12; i++) {
     spinner.append($('<div/>').addClass('rb-bar' + i));
   }
-  return spinner;
+  return spinnerDiv.append(spinner);
 }
 
 function createFrameDiv() {
@@ -327,7 +333,6 @@ function createFrameContainer() {
   return div = $('<div/>')
     .addClass('rb-frameContainer')
     .css('width', '100%')
-    .css('text-align', 'center')
     .append(createSpinner())
     .append(createFrameDiv());
 }
