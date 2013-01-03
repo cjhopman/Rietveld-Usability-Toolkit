@@ -86,33 +86,41 @@ function showFrame(row, frame, finished) {
     });
 }
 
-function toggleFrame(frame) {
+function toggleFrame(frame, show) {
   if (!frame.data().frameLoaded) {
     return;
   }
   var row = frame.closest('tr'),
     frameId = frame.attr('id'),
     currFrameId = row.data().showingFrameId;
-  if (currFrameId == frameId) {
+  var canHide = !show;
+  if (canHide && currFrameId == frameId) {
     hideFrame(row);
   } else {
     showFrame(row, frame);
   }
 }
 
-function toggleFrameForColumnId(row, column) {
+function toggleFrameForColumnId(row, column, show) {
   var difflink = row.find('.' + column);
   if (difflink.length == 0) {
     hideFrame(row.next());
   } else {
     var frame = getFrameForColumnId(row, column);
     if (frame.length > 0) {
-      toggleFrame(frame);
+      toggleFrame(frame, show);
     } else {
       queueFrameLoad(createFrameForLink(difflink));
     }
   }
 }
+
+function showAllFramesInColumn(table, columnId) {
+  table.find('.rb-diffRow').each(function() {
+    toggleFrameForColumnId($(this), columnId, true);
+  });
+}
+
 
 function showSpinner(row, finished) {
   row.show();
@@ -260,9 +268,11 @@ function updatePatchTables() {
 
     if (enableInline) {
       $('.rb-diffLink')
-        .click(function() {
-          toggleFrameForLink($(this));
-          return false;
+        .click(function(ev) {
+          if (ev.button == 0) {
+            toggleFrameForLink($(this));
+            ev.preventDefault();
+          }
         });
     }
   });
@@ -271,12 +281,6 @@ chrome.storage.onChanged.addListener(updatePatchTables, ['rewriteUnifiedLinks', 
 
 function frameIdSuffixFromDiffHref(href) {
   return '_frame_' + href.match('/diff2?/([^/]*)/')[1].replace(':', '_');
-}
-
-function showAllFramesInColumn(table, columnId) {
-  table.find('.rb-diffRow').each(function() {
-    toggleFrameForColumnId($(this), columnId);
-  });
 }
 
 function addShowButton(cell, columnId, text) {
