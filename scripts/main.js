@@ -244,6 +244,11 @@ function iframeLoaded(id) {
   // FIXME: Calling resizer() here should work, but somehow it causes a bug
   // where the frame sometimes overlaps the next row after load.
   //resizer();
+
+  // Force a reflow after a short time. This fixes a bug where comments are not
+  // displayed on first load (100% reproducible on
+  // https://codereview.appspot.com/6493094/).
+  setTimeout(function() { inner.find('html').addClass('rb-forceReflow'); }, 100);
 }
 
 function updatePatchTables() {

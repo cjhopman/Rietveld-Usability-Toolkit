@@ -1,6 +1,6 @@
 {
   "name": "Rietveld Beautifier",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "manifest_version" : 2,
   "description": "This is a description",
   "permissions": [
@@ -22,10 +22,10 @@
   "content_scripts": [
     {
       "matches": [
-        "*://chromiumcodereview.appspot.com/*",
         "*://codereview.appspot.com/*",
-        "*://codereview.chromium.org/*",
-        "*://chromereviews.googleplex.com/*"
+        "*://chromiumcodereview.appspot.com/*",
+        "*://chromereviews.googleplex.com/*",
+        "*://codereview.chromium.org/*"
       ],
       "all_frames": true,
       "js": [
