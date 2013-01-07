@@ -1,45 +1,6 @@
-var codelineSelector = '\
-    .olddark, .newdark, .oldreplace, .olddelete, .oldinsert, .oldequal, .oldblank, \
-    .oldlight, .newlight, .oldreplace1, .newreplace1, \
-    .newreplace, .newdelete, .newinsert, .newequal, .newblank, \
-    .oldmove, .oldchangemove, .oldchangemove1, .oldmove_out, .oldchangemove_out, \
-    .newmove, .newchangemove, .newchangemove1, \
-    .udiffadd, .udiffremove, .udiff, .debug-info';
+if (!domInspector) throw new Error('hmm');
 
-
-/*
-.oldblank, .newblank {
-    background-color: #eee;
-}
-
-
-.olddelete {
-    background-color: #faa;
-}
-.newinsert {
-    background-color: #9f9;
-}
-
-
-.oldreplace1 {
-    background-color: #faa;
-}
-.newreplace1 {
-    background-color: #9f9;
-}
-.oldreplace {
-    background-color: #fee;
-}
-.newreplace {
-    background-color: #dfd;
-}
-
-
-.oldinsert, .newdelete {
-    background-color: #ddd;
-}
-*/
-
+chrome.extension.sendMessage({action: 'show_page_action'}, function(response) {});
 
 function addStyleNode(id) {
   $(document.documentElement).append($('<style class="rb-style" id="' + id + '"/>'))
@@ -68,7 +29,7 @@ function updateCodelineFont() {
   chrome.storage.sync.get(['codeFontEnabled', 'codeFont'] , function(items) {
     var html = '';
     if (items['codeFontEnabled']) {
-      html = createStyle(codelineSelector, 'font-family', items['codeFont'] + ', monospace')
+      html = createStyle(domInspector.codelineAll(), 'font-family', items['codeFont'] + ', monospace')
     }
     changeStyle('codelineStyle', html);
   });
@@ -86,11 +47,11 @@ function updateCodelineColors() {
       changeStyle('codelineColors', '');
     }
 
-    var html = createStyle('.oldlight, .newlight', 'display', 'inline-block');
+    var html = createStyle(domInspector.codelineLight(), 'display', 'inline-block');
 
     // The way that Rietveld does coloring is broken. So let's hack it some.
-    html += createStyle('.olddark, .newdark', 'background-color', 'rgba(0,0,0,0)');
-    html += createStyle('.oldlight, .newlight', 'background-color', 'rgba(255,255,255,0.7)');
+    html += createStyle(domInspector.codelineDark(), 'background-color', 'rgba(0,0,0,0)');
+    html += createStyle(domInspector.codelineLight(), 'background-color', 'rgba(255,255,255,0.7)');
 
     var deleteColor = '#faa';
     var insertColor = '#9f9';
@@ -119,10 +80,10 @@ function updateCodelineColors() {
       oldReplaceColor = newReplaceColor = replaceColor;
     }
 
-    html += createStyle('.oldreplace, .oldreplace1', 'background-color', oldReplaceColor);
-    html += createStyle('.newreplace, .newreplace1', 'background-color', newReplaceColor);
-    html += createStyle('.olddelete', 'background-color', deleteColor);
-    html += createStyle('.newinsert', 'background-color', insertColor);
+    html += createStyle(domInspector.codelineOldReplace(), 'background-color', oldReplaceColor);
+    html += createStyle(domInspector.codelineNewReplace(), 'background-color', newReplaceColor);
+    html += createStyle(domInspector.codelineOldDelete(), 'background-color', deleteColor);
+    html += createStyle(domInspector.codelineNewInsert(), 'background-color', insertColor);
 
     changeStyle('codelineColors', html);
   });

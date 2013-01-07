@@ -1,3 +1,7 @@
+// TODO: We should use programmatic injection so that
+// this script is only injected on correct pages.
+if (!domInspector || !domInspector.isPatch()) throw new Error("Halt execution.")
+
 chrome.extension.sendMessage({action: 'show_page_action'}, function(response) {});
 
 function createFrameForLink(link) {
@@ -219,20 +223,12 @@ function iframeLoaded(id) {
     var newHeight = inner.find('html').height();
     var newWidth = inner.find('html').width();
     if (frame.css('height') != newHeight || frame.css('width') != newWidth) {
-      // FIXME: This is a total hack. When the page in the iframe gets
-      // smaller, its document still fills the iframe, and so newHeight/Width
-      // above are larger than we want. If we first make the frame small (not
-      // too small, because that causes the outer page to scroll), the
-      // document will then shrink to the size of its interior. There should
-      // be a better way to do this.
-      //frame.css('height', newHeight).css('width', newWidth);
       frameDiv.css('height', newHeight).css('width', newWidth);
+      // Chrome 23 requires that the frame be resized.
+      frame.css('height', newHeight).css('width', newWidth);
     }
   };
 
-  // FIXME: more hacks. Without this, the new frame flashes at the left edge
-  // of the row before moving to the center.
-  //frameDiv.css('height', frame.height()).css('width', frame.width());
   removeDiffChrome(inner);
   inner.find('html').css('margin', 'auto');
 
