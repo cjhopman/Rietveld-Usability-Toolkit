@@ -148,15 +148,6 @@ function hideAllDiffs(tables) {
   });
 }
 
-function maybeAppendColumnWidth(src, items) {
-  if (items['autoSetColumnWidth']) {
-    var filetype = src.substr(src.lastIndexOf('.') + 1);
-    if (filetype in items['columnWidthMap'])
-      src += '?column_width=' + items['columnWidthMap'][filetype];
-  }
-  return src;
-}
-
 function queueFrameLoad(frame) {
   var frameId = frame.attr('id');
   var rowId = frameId.match('inline_diff_row_[0-9]*')[0];
@@ -172,7 +163,8 @@ function queueFrameLoad(frame) {
   pushLoadQueue(frameId, priority, function(finished) {
     chrome.storage.sync.get(['autoSetColumnWidth', 'columnWidthMap'], function(items) {
       var src = frame.data().href;
-      src = maybeAppendColumnWidth(src, items);
+      if (items['autoSetColumnWidth'])
+        src = domInspector.adjustUrlForColumnWidth(src, items['columnWidthMap']);
 
       row.find('.rb-frameDiv')
         .append(frame);
@@ -197,20 +189,6 @@ function toggleFrameForLink(link) {
   toggleFrameForColumnId(link.closest('.rb-diffRow'), link.data().columnId);
 }
 
-function removeDiffChrome(page) {
-  var code = page.find('.code');
-  code.children().css('margin', '3px');
-  code.parents().andSelf()
-    .css('margin', '0')
-    .css('display', 'table')
-    .siblings()
-      .hide();
-  code.find('.codenav').hide();
-  code.find('#table-top').css('position', '');
-  code.find('#codeTop').hide();
-  code.find('#codeBottom').hide();
-}
-
 function iframeLoaded(id) {
   var frame = $("#" + id);
   var frameDiv = frame.closest('.rb-frameDiv');
@@ -229,8 +207,7 @@ function iframeLoaded(id) {
     }
   };
 
-  removeDiffChrome(inner);
-  inner.find('html').css('margin', 'auto');
+  domInspector.adjustDiffFrameForInline(inner);
 
   // The observer must be installed before the first resizer() call (otherwise
   // we may miss a modification between the resizer() call and observer
@@ -241,10 +218,10 @@ function iframeLoaded(id) {
   // where the frame sometimes overlaps the next row after load.
   //resizer();
 
-  // Force a reflow after a short time. This fixes a bug where comments are not
+  // Force a reflow after a short time. This "fixes" a bug where comments are not
   // displayed on first load (100% reproducible on
   // https://codereview.appspot.com/6493094/).
-  setTimeout(function() { inner.find('html').addClass('rb-forceReflow'); }, 100);
+  setTimeout(function() { inner.find('html').toggleClass('rb-forceReflow'); }, 100);
 }
 
 function updatePatchTables() {
@@ -360,14 +337,9 @@ var currentId = 0;
 // Inject some data and elements to the DOM to make modifications (and
 // reversals) easier.
 function injectDataAndNodes() {
-  // FIXME: this is a hack so that we only perform changes on issue details
-  // pages (not search result pages). Instead, we should use programmatic
-  // injection and only inject scripts/css on the pages that we want.
-  if ($('.issue-details').length == 0) return;
-
-
   // Modify table header rows.
-  $('.issue-list table:not(.rb-patchTable)')
+  var newPatchTables = domInspector.findPatchTables()
+    .filter(':not(.rb-patchTable)')
     .addClass('rb-patchTable')
     .find('tr:first-of-type')
     .addClass('rb-tableHeader')
@@ -402,7 +374,8 @@ function injectDataAndNodes() {
     });
 
 
-  var difflinks = $('.issue-list a[href*="/diff"]:not(.rb-diffLink)')
+  var difflinks = domInspector.findDiffLinks()
+    .filter(':not(.rb-diffLink)')
     .addClass('rb-diffLink');
 
   // Update rows first since frameId is based on rowId
@@ -420,30 +393,23 @@ function injectDataAndNodes() {
     var href = this.href;
     var frameId = $(this).data().rowId + frameIdSuffixFromDiffHref(href);
     $(this).data({ frameId: frameId, diff: href });
-    var issueList = $(this).closest('.issue-list');
-    var diffColumns = issueList.data().diffColumns;
     var html = $(this).html().trim();
     var columnId = 'rb-column' + html;
     $(this).addClass(columnId);
     $(this).data({ columnId: columnId});
     // For columnId == 'rb-columnView' the button is installed above.
     if (columnId != 'rb-columnView') {
-      var cell = $(this).closest('.issue-list').find('.rb-deltaHeader');
+      var cell = $(this).closest('.rb-patchTable').find('.rb-deltaHeader');
       addShowButton(cell, columnId, 'All ' + html);
     }
   })
 
-  $('.issue-list a[href*="/patch/"]:not(.rb-filename)')
+  domInspector.findUnifiedLinks()
+    .filter(':not(.rb-filename)')
     .addClass('rb-filename')
     .addClass('rb-columnView')
     .data({ columnId: 'rb-columnView'})
-    .each(function() {
-      var href = this.href;
-      var diffHref = href.substr(0, href.lastIndexOf('/') + 1).replace('patch', 'diff') + this.innerHTML.trim();
-      var rowId = $(this).data().rowId;
-      var frameId = rowId + frameIdSuffixFromDiffHref(diffHref);
-      $(this).data({ patch: href, diff: diffHref, frameId: frameId });
-    });
+    .each(domInspector.unifiedLinkRewriter());
 }
 
 function setupPatchSetObserver() {
@@ -454,30 +420,13 @@ function setupPatchSetObserver() {
     injectDataAndNodes();
     updatePatchTables();
   });
-  $('div[id^=ps-]').each(function () { observer.observe(this, { childList: true }); });
+  domInspector.findPatchContainers()
+    .each(function () { observer.observe(this, { childList: true }); });
 }
 setupPatchSetObserver();
 injectDataAndNodes();
 updatePatchTables();
-
-// The baseurl is often long and makes the whole left pane too long... hide it.
-function hideBaseUrl() {
-  chrome.storage.sync.get('hideBaseUrl', function(items) {
-    if (items['hideBaseUrl']) {
-      $('.issue_details_sidebar').children().eq(4).hide();
-      $('.meta').attr('width', '10%');
-    } else {
-      if ($('.meta').attr('width')[0] == '10%') {
-        $('.meta').attr('width', '20%');
-      }
-      $('.issue_details_sidebar').children().eq(4).show();
-    }
-  });
-}
-hideBaseUrl();
-chrome.storage.onChanged.addListener(function(changes, namespace) {
-  hideBaseUrl();
-}, 'hideBaseUrl');
+domInspector.modifyPatchPage();
 
 
 function enableAnimations() {
