@@ -1,6 +1,9 @@
 // TODO: We should use programmatic injection so that
 // this script is only injected on correct pages.
-if (!domInspector || !domInspector.isPatch()) throw new Error("Halt execution.")
+if (!domInspector || !domInspector.isPatch()) {
+  console.log(document.URL, domInspector, domInspector.isPatch());
+  throw new Error('Halt execution.')
+} else console.log('Found patch page... injecting.');
 
 chrome.extension.sendMessage({action: 'show_page_action'}, function(response) {});
 
@@ -9,7 +12,7 @@ function createFrameForLink(link) {
   var href = link.data().diff;
   var frame = $('<iframe id="' + id + '"/>')
     .addClass('rb-inlineDiff')
-    .attr('seamless', true)
+    //.attr('seamless', true)
     .attr('frameBorder', '0')
     .data({ href: href })
     .hide();
@@ -24,7 +27,7 @@ function createFrameForLink(link) {
 
 // Returns an empty collection if the frame hasn't been created.
 function getFrameForLink(link) {
-  return $("#" + link.data().frameId);
+  return $('#' + link.data().frameId);
 }
 
 function getFrameForColumnId(row, id) {
@@ -181,6 +184,7 @@ function queueFrameLoad(frame) {
       });
 
       frame.attr('src', src);
+      //frame.attr('src', 'data:text/html,<html><body><iframe src="' + src + '"></iframe></body></html>');
     });
   });
 }
@@ -190,11 +194,12 @@ function toggleFrameForLink(link) {
 }
 
 function iframeLoaded(id) {
-  var frame = $("#" + id);
+  var frame = $('#' + id);
   var frameDiv = frame.closest('.rb-frameDiv');
   frame.data({ frameLoaded: true });
   var row = frame.closest('tr');
 
+  return;
   var inner = frame.contents();
 
   var resizer = function() {
@@ -209,11 +214,15 @@ function iframeLoaded(id) {
 
   domInspector.adjustDiffFrameForInline(inner);
 
+  return;
   // The observer must be installed before the first resizer() call (otherwise
   // we may miss a modification between the resizer() call and observer
   // installation).
   var observer = new WebKitMutationObserver(resizer);
-  observer.observe(inner.find('html')[0], { attributes: true, subtree: true } );
+  inner.find('html').each(function() {
+      observer.observe(this, { attributes: true, subtree: true } );
+    });
+
   // FIXME: Calling resizer() here should work, but somehow it causes a bug
   // where the frame sometimes overlaps the next row after load.
   //resizer();
@@ -251,16 +260,24 @@ function updatePatchTables() {
           if (ev.button == 0) {
             toggleFrameForLink($(this));
             ev.preventDefault();
+            ev.stopImmediatePropagation();
+            ev.stopPropagation();
           }
+        })
+        .mouseup(function(ev) {
+          ev.preventDefault();
+          ev.stopImmediatePropagation();
+          ev.stopPropagation();
+        })
+        .mousedown(function(ev) {
+          ev.preventDefault();
+          ev.stopImmediatePropagation();
+          ev.stopPropagation();
         });
     }
   });
 }
 chrome.storage.onChanged.addListener(updatePatchTables, ['rewriteUnifiedLinks', 'enableInlineDiffs', 'createViewAllButtons']);
-
-function frameIdSuffixFromDiffHref(href) {
-  return '_frame_' + href.match('/diff2?/([^/]*)/')[1].replace(':', '_');
-}
 
 function addShowButton(cell, columnId, text) {
   if (cell.find('.' + columnId).length > 0) return;
@@ -337,6 +354,9 @@ var currentId = 0;
 // Inject some data and elements to the DOM to make modifications (and
 // reversals) easier.
 function injectDataAndNodes() {
+  console.log('injecting');
+  console.log(domInspector.findPatchTables());
+  console.log(domInspector.findDiffLinks());
   // Modify table header rows.
   var newPatchTables = domInspector.findPatchTables()
     .filter(':not(.rb-patchTable)')
@@ -373,16 +393,20 @@ function injectDataAndNodes() {
         .html('');
     });
 
+  console.log(newPatchTables);
 
   var difflinks = domInspector.findDiffLinks()
     .filter(':not(.rb-diffLink)')
     .addClass('rb-diffLink');
 
+  console.log(difflinks);
+
   // Update rows first since frameId is based on rowId
   difflinks.closest('tr:not(.rb-diffRow)')
     .addClass('rb-diffRow')
     .each(function() {
-      rowId = "inline_diff_row_" + currentId++;
+      console.log(this);
+      rowId = 'inline_diff_row_' + currentId++;
 
       $(this).find('a').andSelf().data({ rowId: rowId });
 
@@ -391,10 +415,10 @@ function injectDataAndNodes() {
 
   difflinks.each(function() {
     var href = this.href;
-    var frameId = $(this).data().rowId + frameIdSuffixFromDiffHref(href);
+    var frameId = $(this).data().rowId + domInspector.frameIdSuffixFromDiffHref(href);
     $(this).data({ frameId: frameId, diff: href });
     var html = $(this).html().trim();
-    var columnId = 'rb-column' + html;
+    var columnId = 'rb-column' + domInspector.columnIdFromHtml(html);
     $(this).addClass(columnId);
     $(this).data({ columnId: columnId});
     // For columnId == 'rb-columnView' the button is installed above.
@@ -417,16 +441,21 @@ function setupPatchSetObserver() {
   // data, we should be able to disconnect them from each patch set after its
   // loaded.
   var observer = new WebKitMutationObserver(function() {
+    console.log('PatchSetObserver triggered.');
     injectDataAndNodes();
     updatePatchTables();
   });
+  console.log(domInspector.findPatchContainers());
   domInspector.findPatchContainers()
-    .each(function () { observer.observe(this, { childList: true }); });
+    .filter(':not(.rb-patchContainer)')
+    .addClass('rb-patchContainer')
+    .each(function () { observer.observe(this, { childList: true, subtree: true}); });
 }
 setupPatchSetObserver();
 injectDataAndNodes();
 updatePatchTables();
 domInspector.modifyPatchPage();
+setTimeout(function() { setupPatchSetObserver(); injectDataAndNodes(); updatePatchTables(); }, 300);
 
 
 function enableAnimations() {

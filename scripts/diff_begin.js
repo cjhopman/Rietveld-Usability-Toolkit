@@ -1,4 +1,4 @@
-if (!domInspector) throw new Error('hmm');
+if (!domInspector || !domInspector.isDiff()) throw new Error('hmm');
 
 chrome.extension.sendMessage({action: 'show_page_action'}, function(response) {});
 

@@ -7,6 +7,11 @@ var rietveldInstances = [
   "codereview.chromium.org"
 ];
 
+var gerritInstances = [
+  "gerrit.chromium.org",
+  "gerrit-int.chromium.org"
+];
+
 function RietveldInspector() {
   this.isDiff = function() {
     return Boolean(document.URL.match(/.*\/diff2?\//));
@@ -62,6 +67,10 @@ function RietveldInspector() {
     };
   };
   this.findPatchContainers = function() { return $('div[id^=ps-]'); };
+  this.frameIdSuffixFromDiffHref = function(href) {
+    return '_frame_' + href.match('/diff2?/([^/]*)/')[1].replace(':', '_');
+  }
+  this.columnIdFromHtml = function(html) { return html; };
   this.modifyPatchPage = function() {
     // The baseurl is often long and makes the whole left pane too long... hide it.
     function hideBaseUrl() {
@@ -84,17 +93,99 @@ function RietveldInspector() {
   };
 }
 
+function GerritInspector() {
+  // TODO: I know the element classes change a lot for different gerrits. These
+  // are only the classes for *.chromium.org, but at least they are extracted
+  // to one spot.
+  var basePattern = 'https?:\/\/[^/]+\/gerrit\/#\/c\/[0-9]+';
+  var isPatchPattern = basePattern + '(\/([0-9]*)?)?$';
+  var isDiffPattern = basePattern + '\/[0-9]*\/(.+)';
+  this.basePattern = basePattern;
+  this.isDiffPattern = isDiffPattern;
+  var domSelectors = {
+    patchTables: '.GFE-PU4BNB',
+    patchContainers: '.gwt-DisclosurePanel div.content'
+  };
+  this.isDiff = function() {
+    return Boolean(document.URL.match(isDiffPattern));
+  };
+  this.isPatch = function() {
+    return Boolean(document.URL.match(isPatchPattern));
+  };
+  // TODO: All this codeline stuff is wrong.
+  this.codelineAll = function() {  return '\
+      .olddark, .newdark, .oldreplace, .olddelete, .oldinsert, .oldequal, .oldblank, \
+      .oldlight, .newlight, .oldreplace1, .newreplace1, \
+      .newreplace, .newdelete, .newinsert, .newequal, .newblank, \
+      .oldmove, .oldchangemove, .oldchangemove1, .oldmove_out, .oldchangemove_out, \
+      .newmove, .newchangemove, .newchangemove1, \
+      .udiffadd, .udiffremove, .udiff, .debug-info';
+  };
+  this.codelineLight = function() { return '.oldlight, .newlight'; };
+  this.codelineDark = function() { return '.olddark, .newdark'; };
+  this.codelineOldReplace = function() { return '.oldreplace, .oldreplace1'; };
+  this.codelineNewReplace = function() { return '.newreplace, .newreplace1'; };
+  this.codelineOldDelete = function() { return '.olddelete'; };
+  this.codelineNewInsert = function() { return '.newinsert'; };
+  this.adjustUrlForColumnWidth = function(src, widthMap) { return src; };
+  this.adjustDiffFrameForInline = function(frame) {
+    return;
+    frame.find('html').css('margin', 'auto');
+
+    var code = frame.find('.code');
+    code.children().css('margin', '3px');
+    code.parents().andSelf()
+      .css('margin', '0')
+      .css('display', 'table')
+      .siblings()
+        .hide();
+    code.find('.codenav').hide();
+    code.find('#table-top').css('position', '');
+    code.find('#codeTop').hide();
+    code.find('#codeBottom').hide();
+  };
+  this.findPatchTables = function() { return $(domSelectors.patchTables); };
+  this.findDiffLinks = function() {
+    return $(domSelectors.patchTables + ' a:not([href$="unified"])')
+      .filter(function() { return Boolean(this.href.match(isDiffPattern)); });
+  };
+  this.findUnifiedLinks = function() { return $(); };
+  this.unifiedLinkRewriter = function() { return function() { } };
+  this.frameIdSuffixFromDiffHref = function(href) {
+    var file = href.match(isDiffPattern)[1];
+    return '_frame_' + file.replace('/', '_');
+  }
+  this.columnIdFromHtml = function(html) { return 'View'; };
+  this.findPatchContainers = function() { return $(domSelectors.patchContainers); };
+  this.modifyPatchPage = function() {
+  };
+}
+
 
 function isUrlRietveld(url) {
   for (var i in rietveldInstances) {
-    if (url.search(rietveldInstances[i])) return true;
+    if (url.indexOf(rietveldInstances[i]) >= 0) {
+      console.log(url, rietveldInstances[i]);
+      return true;
+    }
   }
+  return false;
+}
+
+function isUrlGerrit(url) {
+  for (var i in gerritInstances) {
+    if (url.indexOf(gerritInstances[i]) >= 0) {
+      console.log(url, gerritInstances[i]);
+      return true;
+    }
+  }
+  return false;
 }
 
 if (isUrlRietveld(document.URL)) {
   domInspector = new RietveldInspector();
-} else if (false) {
-
+} else if (isUrlGerrit(document.URL)) {
+  domInspector = new GerritInspector();
 }
 
 
