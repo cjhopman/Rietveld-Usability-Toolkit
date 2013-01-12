@@ -58,11 +58,12 @@ function RietveldInspector() {
   this.findDiffLinks = function() { return $('.issue-list a[href*="/diff"]'); };
   this.findUnifiedLinks = function() { return $('.issue-list a[href*="/patch/"]'); };
   this.unifiedLinkRewriter = function() {
+    var inspector = this;
     return function() {
       var href = this.href;
       var diffHref = href.substr(0, href.lastIndexOf('/') + 1).replace('patch', 'diff') + this.innerHTML.trim();
       var rowId = $(this).data().rowId;
-      var frameId = rowId + frameIdSuffixFromDiffHref(diffHref);
+      var frameId = rowId + inspector.frameIdSuffixFromDiffHref(diffHref);
       $(this).data({ patch: href, diff: diffHref, frameId: frameId });
     };
   };
@@ -93,6 +94,8 @@ function RietveldInspector() {
   };
 }
 
+// TODO: Fix Gerrit support. Gerrit is built with GWT and does some weird frame
+// busting.
 function GerritInspector() {
   // TODO: I know the element classes change a lot for different gerrits. These
   // are only the classes for *.chromium.org, but at least they are extracted

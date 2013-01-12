@@ -12,7 +12,7 @@ function createFrameForLink(link) {
   var href = link.data().diff;
   var frame = $('<iframe id="' + id + '"/>')
     .addClass('rb-inlineDiff')
-    //.attr('seamless', true)
+    .attr('seamless', true)
     .attr('frameBorder', '0')
     .data({ href: href })
     .hide();
@@ -199,7 +199,6 @@ function iframeLoaded(id) {
   frame.data({ frameLoaded: true });
   var row = frame.closest('tr');
 
-  return;
   var inner = frame.contents();
 
   var resizer = function() {
@@ -214,7 +213,6 @@ function iframeLoaded(id) {
 
   domInspector.adjustDiffFrameForInline(inner);
 
-  return;
   // The observer must be installed before the first resizer() call (otherwise
   // we may miss a modification between the resizer() call and observer
   // installation).
@@ -354,9 +352,6 @@ var currentId = 0;
 // Inject some data and elements to the DOM to make modifications (and
 // reversals) easier.
 function injectDataAndNodes() {
-  console.log('injecting');
-  console.log(domInspector.findPatchTables());
-  console.log(domInspector.findDiffLinks());
   // Modify table header rows.
   var newPatchTables = domInspector.findPatchTables()
     .filter(':not(.rb-patchTable)')
@@ -393,19 +388,14 @@ function injectDataAndNodes() {
         .html('');
     });
 
-  console.log(newPatchTables);
-
   var difflinks = domInspector.findDiffLinks()
     .filter(':not(.rb-diffLink)')
     .addClass('rb-diffLink');
-
-  console.log(difflinks);
 
   // Update rows first since frameId is based on rowId
   difflinks.closest('tr:not(.rb-diffRow)')
     .addClass('rb-diffRow')
     .each(function() {
-      console.log(this);
       rowId = 'inline_diff_row_' + currentId++;
 
       $(this).find('a').andSelf().data({ rowId: rowId });
@@ -441,11 +431,9 @@ function setupPatchSetObserver() {
   // data, we should be able to disconnect them from each patch set after its
   // loaded.
   var observer = new WebKitMutationObserver(function() {
-    console.log('PatchSetObserver triggered.');
     injectDataAndNodes();
     updatePatchTables();
   });
-  console.log(domInspector.findPatchContainers());
   domInspector.findPatchContainers()
     .filter(':not(.rb-patchContainer)')
     .addClass('rb-patchContainer')
@@ -455,7 +443,6 @@ setupPatchSetObserver();
 injectDataAndNodes();
 updatePatchTables();
 domInspector.modifyPatchPage();
-setTimeout(function() { setupPatchSetObserver(); injectDataAndNodes(); updatePatchTables(); }, 300);
 
 
 function enableAnimations() {

@@ -25,9 +25,7 @@
         "*://codereview.appspot.com/*",
         "*://chromiumcodereview.appspot.com/*",
         "*://chromereviews.googleplex.com/*",
-        "*://codereview.chromium.org/*",
-        "*://gerrit.chromium.org/*",
-        "*://gerrit-int.chromium.org/*"
+        "*://codereview.chromium.org/*"
       ],
       "all_frames": true,
       "js": [
@@ -44,9 +42,7 @@
         "*://chromiumcodereview.appspot.com/*",
         "*://codereview.appspot.com/*",
         "*://codereview.chromium.org/*",
-        "*://chromereviews.googleplex.com/*",
-        "*://gerrit.chromium.org/*",
-        "*://gerrit-int.chromium.org/*"
+        "*://chromereviews.googleplex.com/*"
       ],
       "all_frames": true,
       "js": [
@@ -64,9 +60,7 @@
         "*://chromiumcodereview.appspot.com/*/diff*",
         "*://codereview.appspot.com/*/diff*",
         "*://codereview.chromium.org/*/diff*",
-        "*://chromereviews.googleplex.com/*/diff*",
-        "*://gerrit.chromium.org/*",
-        "*://gerrit-int.chromium.org/*"
+        "*://chromereviews.googleplex.com/*/diff*"
       ],
       "all_frames": true,
       "js": [
