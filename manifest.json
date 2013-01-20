@@ -47,6 +47,8 @@
       "all_frames": true,
       "js": [
         "scripts/loadQueue.js",
+        "scripts/controls.js",
+        "scripts/help.js",
         "scripts/main.js"
       ],
       "css": [

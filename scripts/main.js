@@ -213,6 +213,8 @@ function iframeLoaded(id) {
 
   domInspector.adjustDiffFrameForInline(inner);
 
+  inner.find('html').keydown(handleFrameKeyDown);
+
   // The observer must be installed before the first resizer() call (otherwise
   // we may miss a modification between the resizer() call and observer
   // installation).
@@ -244,34 +246,22 @@ function updatePatchTables() {
       hideAllDiffs($('.rb-patchTable'));
     }
 
-    $('.rb-diffLink').off('click');
-
     $('.rb-filename')
       .toggleClass('rb-diffLink', shouldRewrite)
       .each(function() {
         this.href = $(this).data(shouldRewrite ? 'diff' : 'patch');
       });
 
+    $('.rb-diffLink').off('click');
+
     if (enableInline) {
       $('.rb-diffLink')
         .click(function(ev) {
-          if (ev.button == 0) {
+          if (ev.button == 0 && !(ev.metaKey || ev.ctrlKey || ev.shiftKey)) {
             toggleFrameForLink($(this));
             ev.preventDefault();
-            ev.stopImmediatePropagation();
-            ev.stopPropagation();
           }
         })
-        .mouseup(function(ev) {
-          ev.preventDefault();
-          ev.stopImmediatePropagation();
-          ev.stopPropagation();
-        })
-        .mousedown(function(ev) {
-          ev.preventDefault();
-          ev.stopImmediatePropagation();
-          ev.stopPropagation();
-        });
     }
   });
 }
@@ -454,3 +444,70 @@ enableAnimations();
 chrome.storage.onChanged.addListener(function(changes, namespace) {
   enableAnimations();
 }, 'enableAnimations');
+
+function keyString(ev) {
+  switch (ev.which) {
+    case 13: return 'enter';
+    case 27: return 'esc';
+    case 38: return 'up';
+    case 40: return 'down';
+    case 188: return ev.shiftKey ? ',' : '<';
+    case 190: return ev.shiftKey ? '.' : '>';
+    case 191: return ev.shiftKey ? '/' : '?';
+  }
+  return String.fromCharCode(ev.keyCode).toLowerCase();
+}
+
+function stopEvent(ev) {
+  ev.stopPropagation();
+  ev.preventDefault();
+}
+
+function handleKeyDown(ev) {
+  var key = keyString(ev);
+  console.log('Got: ', key, ev);
+
+  switch (key) {
+    case 'enter':
+    case 'o':
+      stopEvent(ev);
+      selectedRow = domInspector.findSelectedRow();
+      toggleFrameForColumnId(selectedRow, 'rb-columnView');
+      break;
+    default:
+      break;
+  }
+
+}
+
+function handleFrameKeyDown(ev) {
+  var key = keyString(ev);
+  console.log(ev, key);
+
+  switch (key) {
+    case 'esc':
+      // We may want to dismiss the keyboard shortcuts info in the main frame.
+      document.onkeydown(ev);
+      break;
+    case '?':
+      stopEvent(ev);
+      document.onkeydown(ev);
+      break;
+    case 'j':
+    case 'k':
+    case 'm':
+      stopEvent(ev);
+      document.onkeydown(ev);
+      window.focus();
+      break;
+    case 'u':
+      stopEvent(ev);
+      break;
+    default:
+      break;
+  }
+}
+
+// Rietveld uses a keydown handler on the document. Attach ours a level lower
+// to intercept things.
+$('html').keydown(handleKeyDown);

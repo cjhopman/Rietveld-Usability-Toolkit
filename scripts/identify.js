@@ -73,17 +73,20 @@ function RietveldInspector() {
   }
   this.columnIdFromHtml = function(html) { return html; };
   this.modifyPatchPage = function() {
+    var baseUrl = $('.issue_details_sidebar').children().eq(4);
+    var html = baseUrl.html();
+    var idx = html.indexOf('<br>');
     // The baseurl is often long and makes the whole left pane too long... hide it.
     function hideBaseUrl() {
       chrome.storage.sync.get('hideBaseUrl', function(items) {
         if (items['hideBaseUrl']) {
-          $('.issue_details_sidebar').children().eq(4).hide();
+          baseUrl.html(html.substr(0, idx) + html.substr(idx).replace(/\//g, '/&#8203;'));
           $('.meta').attr('width', '10%');
         } else {
           if ($('.meta').attr('width')[0] == '10%') {
             $('.meta').attr('width', '20%');
           }
-          $('.issue_details_sidebar').children().eq(4).show();
+          baseUrl.html(html);
         }
       });
     }
@@ -91,6 +94,9 @@ function RietveldInspector() {
     chrome.storage.onChanged.addListener(function(changes, namespace) {
       hideBaseUrl();
     }, 'hideBaseUrl');
+  };
+  this.findSelectedRow = function() {
+    return $('.first img').filter(function() { return $(this).css('visibility') != 'hidden'; }).closest('tr');
   };
 }
 
