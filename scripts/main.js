@@ -470,7 +470,6 @@ function handleKeyDown(ev) {
     return;
 
   var key = keyString(ev);
-  console.log('Got: ', key, ev);
 
   switch (key) {
     case 'enter':
@@ -478,6 +477,21 @@ function handleKeyDown(ev) {
       stopEvent(ev);
       selectedRow = domInspector.findSelectedRow();
       toggleFrameForColumnId(selectedRow, 'rb-columnView');
+      break;
+    case 'n':
+    case 'p':
+    case 'c':
+    case 's':
+    case 'up':
+    case 'down':
+      selectedRow = domInspector.findSelectedRow();
+      activeFrameId = selectedRow.next().data('showingFrameId');
+      if (activeFrameId) {
+        var frameDocument = $('#' + activeFrameId).contents()[0];
+        $(frameDocument).find('html').focus();
+        frameDocument.onkeydown(ev);
+        stopEvent(ev);
+      }
       break;
     default:
       break;
@@ -490,8 +504,6 @@ function handleFrameKeyDown(ev) {
     return;
 
   var key = keyString(ev);
-  console.log(ev, key);
-
 
   switch (key) {
     case 'esc':
@@ -499,15 +511,15 @@ function handleFrameKeyDown(ev) {
       document.onkeydown(ev);
       break;
     case '?':
-      stopEvent(ev);
       document.onkeydown(ev);
+      stopEvent(ev);
       break;
     case 'j':
     case 'k':
     case 'm':
-      stopEvent(ev);
       document.onkeydown(ev);
       window.focus();
+      stopEvent(ev);
       break;
     case 'u':
       stopEvent(ev);

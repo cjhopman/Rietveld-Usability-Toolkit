@@ -54,6 +54,6 @@ function loggingDecorator(name) {
 }
 
 if (chrome.extension) {
-  injectScriptFile(chrome.extension.getURL('scripts/lib.js'));
+  injectScriptFile(document, chrome.extension.getURL('scripts/lib.js'));
 }
 
