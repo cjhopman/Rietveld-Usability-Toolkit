@@ -2,7 +2,7 @@
 // this script is only injected on correct pages.
 if (!domInspector || !domInspector.isPatch()) {
   console.log(document.URL, domInspector, domInspector.isPatch());
-  throw new Error('Halt execution.')
+  throw new Error('Halt execution.');
 } else console.log('Found patch page... injecting.');
 
 chrome.extension.sendMessage({action: 'show_page_action'}, function(response) {});
@@ -184,7 +184,6 @@ function queueFrameLoad(frame) {
       });
 
       frame.attr('src', src);
-      //frame.attr('src', 'data:text/html,<html><body><iframe src="' + src + '"></iframe></body></html>');
     });
   });
 }
@@ -222,6 +221,9 @@ function iframeLoaded(id) {
   inner.find('html').each(function() {
       observer.observe(this, { attributes: true, subtree: true } );
     });
+
+  injectScriptFile(inner[0], chrome.extension.getURL('scripts/inject/inline_frame.js'));
+  injectScript(inner[0], function(id) { rb_frameId = id; }, id);
 
   // FIXME: Calling resizer() here should work, but somehow it causes a bug
   // where the frame sometimes overlaps the next row after load.
@@ -451,9 +453,9 @@ function keyString(ev) {
     case 27: return 'esc';
     case 38: return 'up';
     case 40: return 'down';
-    case 188: return ev.shiftKey ? ',' : '<';
-    case 190: return ev.shiftKey ? '.' : '>';
-    case 191: return ev.shiftKey ? '/' : '?';
+    case 188: return ev.shiftKey ? '<' : ',';
+    case 190: return ev.shiftKey ? '>' : '.';
+    case 191: return ev.shiftKey ? '?' : '/';
   }
   return String.fromCharCode(ev.keyCode).toLowerCase();
 }
@@ -464,6 +466,9 @@ function stopEvent(ev) {
 }
 
 function handleKeyDown(ev) {
+  if (ev.target.nodeName == "TEXTAREA" || ev.target.nodeName == "INPUT")
+    return;
+
   var key = keyString(ev);
   console.log('Got: ', key, ev);
 
@@ -481,8 +486,12 @@ function handleKeyDown(ev) {
 }
 
 function handleFrameKeyDown(ev) {
+  if (ev.target.nodeName == "TEXTAREA" || ev.target.nodeName == "INPUT")
+    return;
+
   var key = keyString(ev);
   console.log(ev, key);
+
 
   switch (key) {
     case 'esc':

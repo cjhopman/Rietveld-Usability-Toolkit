@@ -77,5 +77,9 @@
     "48": "icons/48.png",
     "128": "icons/128.png"
   },
-  "options_page" : "settings/settings.html"
+  "options_page" : "settings/settings.html",
+  "web_accessible_resources" : [
+    "scripts/inject/inline_frame.js",
+    "scripts/lib.js"
+  ]
 }
