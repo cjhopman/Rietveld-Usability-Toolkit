@@ -31,10 +31,16 @@ function logWrapper(name) { return function(func) {
 }
 
 function decorate(name, func) {
-  window[name] = (function(old) { return function () {
+  var base = window;
+  var path = name.split('.');
+  for (var i = 0; i < path.length - 1; i++)
+    base = base[path[i]];
+  path = path[path.length - 1];
+
+  base[path] = (function(old) { return function () {
         return func.apply(this, [old].concat([].slice.apply(arguments)));
       };
-    })(window[name]);
+    })(base[path]);
 }
 
 function decorateRecursive(name, func) {

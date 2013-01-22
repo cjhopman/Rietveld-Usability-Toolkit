@@ -5,7 +5,7 @@ if (!domInspector || !domInspector.isPatch()) {
   throw new Error('Halt execution.');
 } else console.log('Found patch page... injecting.');
 
-chrome.extension.sendMessage({action: 'show_page_action'}, function(response) {});
+injectScriptFile(document, chrome.extension.getURL('scripts/inject/patch.js'));
 
 function createFrameForLink(link) {
   var id = link.data().frameId;
@@ -66,6 +66,13 @@ function hideFrame(row, finished) {
           if (finished) finished();
         });
     });
+}
+
+function selectRow(row) {
+  var ev = document.createEvent('CustomEvent');
+  var pos = $('.rb-diffRow').index(row);
+  ev.initCustomEvent('rb-gotoTrPos', false, false, { pos: pos });
+  document.dispatchEvent(ev);
 }
 
 function swapFrame(row, frame) {
@@ -261,6 +268,7 @@ function updatePatchTables() {
         .click(function(ev) {
           if (ev.button == 0 && !(ev.metaKey || ev.ctrlKey || ev.shiftKey)) {
             toggleFrameForLink($(this));
+            selectRow($(this).closest('tr'));
             ev.preventDefault();
           }
         })

@@ -80,6 +80,7 @@
   "options_page" : "settings/settings.html",
   "web_accessible_resources" : [
     "scripts/inject/inline_frame.js",
+    "scripts/inject/patch.js",
     "scripts/lib.js"
   ]
 }
