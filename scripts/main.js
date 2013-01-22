@@ -478,22 +478,25 @@ function handleKeyDown(ev) {
     return;
 
   var key = keyString(ev);
+  var selectedRow = domInspector.findSelectedRow();
+  var activeFrameId = selectedRow.next().data('showingFrameId');
 
   switch (key) {
     case 'enter':
     case 'o':
       stopEvent(ev);
-      selectedRow = domInspector.findSelectedRow();
       toggleFrameForColumnId(selectedRow, 'rb-columnView');
       break;
     case 'n':
     case 'p':
+      if (!activeFrameId) {
+        (key == 'n' ? selectNextInColumn() : selectPrevInColumn());
+        break;
+      }
     case 'c':
     case 's':
     case 'up':
     case 'down':
-      selectedRow = domInspector.findSelectedRow();
-      activeFrameId = selectedRow.next().data('showingFrameId');
       if (activeFrameId) {
         var frameDocument = $('#' + activeFrameId).contents()[0];
         $(frameDocument).find('html').focus();
@@ -540,3 +543,36 @@ function handleFrameKeyDown(ev) {
 // Rietveld uses a keydown handler on the document. Attach ours a level lower
 // to intercept things.
 $('html').keydown(handleKeyDown);
+
+function currentColumn() {
+  var row = domInspector.findSelectedRow();
+  var frameId = row.next().data('showingFrameId');
+  if (frameId) {
+    var links = row.find('.rb-diffLink');
+    var link = links.filter(function() { return $(this).data('frameId') == frameId; });
+    return link.data('columnId');
+  } else {
+    return 'rb-columnView';
+  }
+}
+
+function selectNextInColumn() {
+  var rows = $('.rb-diffRow');
+  var idx = rows.index(domInspector.findSelectedRow());
+  rows = rows.slice(idx + 1).find('.' + currentColumn()).closest('tr');
+  if (rows.length > 0) {
+    selectRow(rows.eq(0));
+  }
+}
+
+function selectPrevInColumn() {
+  var rows = $('.rb-diffRow');
+  var idx = rows.index(domInspector.findSelectedRow());
+  rows = rows.slice(0, idx).find('.' + currentColumn()).closest('tr');
+  if (rows.length > 0) {
+    selectRow(rows.eq(rows.length - 1));
+  }
+}
+
+document.addEventListener('rb-selectNextInColumn', selectNextInColumn);
+document.addEventListener('rb-selectPrevInColumn', selectPrevInColumn);

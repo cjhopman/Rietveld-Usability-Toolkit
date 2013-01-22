@@ -1,7 +1,5 @@
 if (!domInspector || !domInspector.isDiff()) throw new Error('hmm');
 
-chrome.extension.sendMessage({action: 'show_page_action'}, function(response) {});
-
 function addStyleNode(id) {
   $(document.documentElement).append($('<style class="rb-style" id="' + id + '"/>'))
 }
