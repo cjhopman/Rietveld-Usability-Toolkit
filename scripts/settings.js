@@ -67,6 +67,11 @@ var manifest = {
       "type": "number",
       "default": 250,
       "description": "Delay between successive frame loads."
+    },
+    "fixDiffSelection": {
+      "type": "bool",
+      "default": true,
+      "description": "Fix copy/paste in diff views."
     }
   }
 }

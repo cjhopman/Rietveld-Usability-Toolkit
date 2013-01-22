@@ -27,12 +27,30 @@ function RietveldInspector() {
       .newmove, .newchangemove, .newchangemove1, \
       .udiffadd, .udiffremove, .udiff, .debug-info';
   };
+  this.codelineOld = function() { return '\
+      .oldreplace, .olddelete, .oldinsert, .oldequal, .oldblank, .oldreplace1, \
+      .oldmove, .oldchangemove, .oldchangemove1, .oldmove_out, .oldchangemove_out, \
+      .rb-null';
+  };
+  this.codelineNew = function() {  return '\
+      .newreplace1, .newreplace, .newdelete, .newinsert, .newequal, .newblank, \
+      .newmove, .newchangemove, .newchangemove1, \
+      .rb-null';
+  };
   this.codelineLight = function() { return '.oldlight, .newlight'; };
   this.codelineDark = function() { return '.olddark, .newdark'; };
   this.codelineOldReplace = function() { return '.oldreplace, .oldreplace1'; };
   this.codelineNewReplace = function() { return '.newreplace, .newreplace1'; };
   this.codelineOldDelete = function() { return '.olddelete'; };
   this.codelineNewInsert = function() { return '.newinsert'; };
+  this.getCodelineInnerChrome = function() {
+    return $('tr[id^="skip-"]').add('.inline-comments');
+  };
+  this.lineNumberRange = function(html) {
+    var m = html.match('( *(<u>)?\[0-9\]*(</u>)? )');
+    console.log(html, m)
+    return m ? [0, m[0].length] : [0, 0];
+  }
   this.adjustUrlForColumnWidth = function(src, widthMap) {
     var filetype = src.substr(src.lastIndexOf('.') + 1);
     if (filetype in widthMap)
@@ -116,20 +134,15 @@ function GerritInspector() {
     return Boolean(document.URL.match(isPatchPattern));
   };
   // TODO: All this codeline stuff is wrong.
-  this.codelineAll = function() {  return '\
-      .olddark, .newdark, .oldreplace, .olddelete, .oldinsert, .oldequal, .oldblank, \
-      .oldlight, .newlight, .oldreplace1, .newreplace1, \
-      .newreplace, .newdelete, .newinsert, .newequal, .newblank, \
-      .oldmove, .oldchangemove, .oldchangemove1, .oldmove_out, .oldchangemove_out, \
-      .newmove, .newchangemove, .newchangemove1, \
-      .udiffadd, .udiffremove, .udiff, .debug-info';
-  };
-  this.codelineLight = function() { return '.oldlight, .newlight'; };
-  this.codelineDark = function() { return '.olddark, .newdark'; };
-  this.codelineOldReplace = function() { return '.oldreplace, .oldreplace1'; };
-  this.codelineNewReplace = function() { return '.newreplace, .newreplace1'; };
-  this.codelineOldDelete = function() { return '.olddelete'; };
-  this.codelineNewInsert = function() { return '.newinsert'; };
+  this.codelineAll = function() {  return ''; };
+  this.codelineOld = function() {  return ''; };
+  this.codelineNew = function() {  return ''; };
+  this.codelineLight = function() {  return ''; };
+  this.codelineDark = function() {  return ''; };
+  this.codelineOldReplace = function() {  return ''; };
+  this.codelineNewReplace = function() {  return ''; };
+  this.codelineOldDelete = function() {  return ''; };
+  this.codelineNewInsert = function() {  return ''; };
   this.adjustUrlForColumnWidth = function(src, widthMap) { return src; };
   this.adjustDiffFrameForInline = function(frame) {
     return;

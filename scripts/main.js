@@ -1,8 +1,9 @@
 // TODO: We should use programmatic injection so that
 // this script is only injected on correct pages.
-if (!domInspector || !domInspector.isPatch()) {
-  console.log(document.URL, domInspector, domInspector.isPatch());
-  throw new Error('Halt execution.')
+if (!domInspector) {
+  throw new Error('Halt execution, no domInspector.');
+} else if (!domInspector.isPatch()) {
+  throw new Error('Halt execution, not a Patch.')
 } else console.log('Found patch page... injecting.');
 
 chrome.extension.sendMessage({action: 'show_page_action'}, function(response) {});

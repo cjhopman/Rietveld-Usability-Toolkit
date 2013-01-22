@@ -9,6 +9,7 @@ function addStyleNode(id) {
 addStyleNode('codelineStyle');
 addStyleNode('codelineColors');
 addStyleNode('codelineAdjust');
+addStyleNode('codelineSelectionFixer');
 
 var changeStyleId = 0;
 function changeStyle(id, style) {
@@ -38,8 +39,6 @@ updateCodelineFont();
 chrome.storage.onChanged.addListener(function(changes, namespace) {
   updateCodelineFont();
 }, ['codeFontEnabled', 'codeFont']);
-
-
 
 function updateCodelineColors() {
   chrome.storage.sync.get(['changeReplaceColor', 'colorBlindMode'] , function(items) {
