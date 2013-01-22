@@ -71,7 +71,7 @@ var manifest = {
     "fixDiffSelection": {
       "type": "bool",
       "default": true,
-      "description": "Fix copy/paste in diff views."
+      "description": "Fix selection/copy in diff views. This does not work (for copy), see <a href=https://bugs.webkit.org/show_bug.cgi?id=80159> this webkit bug.</a>"
     }
   }
 }

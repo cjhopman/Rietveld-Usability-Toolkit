@@ -15,7 +15,7 @@ function addCheckbox(container, name, setting) {
     change[name] = Boolean($(this).attr('checked'));
     chrome.storage.sync.set(change);
   });
-  div.append(check).append(document.createTextNode(setting.description));
+  div.append(check).append($('<span/>').html(setting.description));
   container.append(div);
 }
 

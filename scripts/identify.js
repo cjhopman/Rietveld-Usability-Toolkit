@@ -20,8 +20,8 @@ function RietveldInspector() {
     return $('.issue-details').length > 0;
   };
   this.codelineAll = function() {  return '\
-      .olddark, .newdark, .oldreplace, .olddelete, .oldinsert, .oldequal, .oldblank, \
-      .oldlight, .newlight, .oldreplace1, .newreplace1, \
+      .oldreplace, .olddelete, .oldinsert, .oldequal, .oldblank, \
+      .oldreplace1, .newreplace1, \
       .newreplace, .newdelete, .newinsert, .newequal, .newblank, \
       .oldmove, .oldchangemove, .oldchangemove1, .oldmove_out, .oldchangemove_out, \
       .newmove, .newchangemove, .newchangemove1, \
@@ -47,9 +47,10 @@ function RietveldInspector() {
     return $('tr[id^="skip-"]').add('.inline-comments');
   };
   this.lineNumberRange = function(html) {
-    var m = html.match('( *(<u>)?\[0-9\]*(</u>)? )');
-    console.log(html, m)
-    return m ? [0, m[0].length] : [0, 0];
+    var m = html.match('( *(<u>)?\[0-9\]+(</u>)? )');
+    if (!m) return [0, 0];
+    var offset = html.indexOf(m[0]);
+    return [offset, offset + m[0].length];
   }
   this.adjustUrlForColumnWidth = function(src, widthMap) {
     var filetype = src.substr(src.lastIndexOf('.') + 1);
@@ -187,7 +188,6 @@ function GerritInspector() {
 function isUrlRietveld(url) {
   for (var i in rietveldInstances) {
     if (url.indexOf(rietveldInstances[i]) >= 0) {
-      console.log(url, rietveldInstances[i]);
       return true;
     }
   }
@@ -197,7 +197,6 @@ function isUrlRietveld(url) {
 function isUrlGerrit(url) {
   for (var i in gerritInstances) {
     if (url.indexOf(gerritInstances[i]) >= 0) {
-      console.log(url, gerritInstances[i]);
       return true;
     }
   }

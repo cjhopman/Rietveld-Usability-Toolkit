@@ -64,7 +64,6 @@
         "*://codereview.chromium.org/*/diff*",
         "*://chromereviews.googleplex.com/*/diff*"
       ],
-      "all_frames": true,
       "js": [
         "scripts/diff_begin.js"
       ],

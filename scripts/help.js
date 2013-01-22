@@ -4,7 +4,7 @@ header = $('<hr/><div style="font-size: large; text-align: center"> Rietveld Usa
 help.append(header);
 help.append(settings);
 insertControls(settings);
-settings.find('.rb-checkbox').click(function(ev) { ev.stopPropagation(); });
+settings.find('.rb-setting').click(function(ev) { ev.stopPropagation(); });
 
 $('#help').append(help);
 
