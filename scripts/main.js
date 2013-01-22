@@ -6,7 +6,7 @@ if (!domInspector) {
   throw new Error('Halt execution, not a Patch.')
 } else console.log('Found patch page... injecting.');
 
-chrome.extension.sendMessage({action: 'show_page_action'}, function(response) {});
+injectScriptFile(document, chrome.extension.getURL('scripts/inject/patch.js'));
 
 function createFrameForLink(link) {
   var id = link.data().frameId;
@@ -67,6 +67,11 @@ function hideFrame(row, finished) {
           if (finished) finished();
         });
     });
+}
+
+function selectRow(row, dir) {
+  var pos = $('.rb-diffRow').index(row);
+  sendCustomEvent('rb-gotoTrPos', { pos: pos, dir: dir });
 }
 
 function swapFrame(row, frame) {
@@ -185,7 +190,6 @@ function queueFrameLoad(frame) {
       });
 
       frame.attr('src', src);
-      //frame.attr('src', 'data:text/html,<html><body><iframe src="' + src + '"></iframe></body></html>');
     });
   });
 }
@@ -214,6 +218,8 @@ function iframeLoaded(id) {
 
   domInspector.adjustDiffFrameForInline(inner);
 
+  inner.find('html').keydown(handleFrameKeyDown);
+
   // The observer must be installed before the first resizer() call (otherwise
   // we may miss a modification between the resizer() call and observer
   // installation).
@@ -221,6 +227,9 @@ function iframeLoaded(id) {
   inner.find('html').each(function() {
       observer.observe(this, { attributes: true, subtree: true } );
     });
+
+  injectScriptFile(inner[0], chrome.extension.getURL('scripts/inject/inline_frame.js'));
+  injectScript(inner[0], function(id) { rb_frameId = id; }, id);
 
   // FIXME: Calling resizer() here should work, but somehow it causes a bug
   // where the frame sometimes overlaps the next row after load.
@@ -245,34 +254,23 @@ function updatePatchTables() {
       hideAllDiffs($('.rb-patchTable'));
     }
 
-    $('.rb-diffLink').off('click');
-
     $('.rb-filename')
       .toggleClass('rb-diffLink', shouldRewrite)
       .each(function() {
         this.href = $(this).data(shouldRewrite ? 'diff' : 'patch');
       });
 
+    $('.rb-diffLink').off('click');
+
     if (enableInline) {
       $('.rb-diffLink')
         .click(function(ev) {
-          if (ev.button == 0) {
+          if (ev.button == 0 && !(ev.metaKey || ev.ctrlKey || ev.shiftKey)) {
             toggleFrameForLink($(this));
+            selectRow($(this).closest('tr'));
             ev.preventDefault();
-            ev.stopImmediatePropagation();
-            ev.stopPropagation();
           }
         })
-        .mouseup(function(ev) {
-          ev.preventDefault();
-          ev.stopImmediatePropagation();
-          ev.stopPropagation();
-        })
-        .mousedown(function(ev) {
-          ev.preventDefault();
-          ev.stopImmediatePropagation();
-          ev.stopPropagation();
-        });
     }
   });
 }
@@ -455,3 +453,129 @@ enableAnimations();
 chrome.storage.onChanged.addListener(function(changes, namespace) {
   enableAnimations();
 }, 'enableAnimations');
+
+function keyString(ev) {
+  switch (ev.which) {
+    case 13: return 'enter';
+    case 27: return 'esc';
+    case 38: return 'up';
+    case 40: return 'down';
+    case 188: return ev.shiftKey ? '<' : ',';
+    case 190: return ev.shiftKey ? '>' : '.';
+    case 191: return ev.shiftKey ? '?' : '/';
+  }
+  return String.fromCharCode(ev.keyCode).toLowerCase();
+}
+
+function stopEvent(ev) {
+  ev.stopPropagation();
+  ev.preventDefault();
+}
+
+function handleKeyDown(ev) {
+  if (ev.target.nodeName == "TEXTAREA" || ev.target.nodeName == "INPUT")
+    return;
+
+  var key = keyString(ev);
+  var selectedRow = domInspector.findSelectedRow();
+  var activeFrameId = selectedRow.next().data('showingFrameId');
+
+  switch (key) {
+    case 'enter':
+    case 'o':
+      stopEvent(ev);
+      toggleFrameForColumnId(selectedRow, 'rb-columnView');
+      break;
+    case 'n':
+    case 'p':
+      if (!activeFrameId) {
+        (key == 'n' ? selectNextInColumn() : selectPrevInColumn());
+        break;
+      }
+    case 'c':
+    case 's':
+    case 'up':
+    case 'down':
+      if (activeFrameId) {
+        var frameDocument = $('#' + activeFrameId).contents()[0];
+        $(frameDocument).find('html').focus();
+        frameDocument.onkeydown(ev);
+        stopEvent(ev);
+      }
+      break;
+    default:
+      break;
+  }
+
+}
+
+function handleFrameKeyDown(ev) {
+  if (ev.target.nodeName == "TEXTAREA" || ev.target.nodeName == "INPUT")
+    return;
+
+  var key = keyString(ev);
+
+  switch (key) {
+    case 'esc':
+      // We may want to dismiss the keyboard shortcuts info in the main frame.
+      document.onkeydown(ev);
+      break;
+    case '?':
+      document.onkeydown(ev);
+      stopEvent(ev);
+      break;
+    case 'j':
+    case 'k':
+    case 'm':
+      document.onkeydown(ev);
+      window.focus();
+      stopEvent(ev);
+      break;
+    case 'u':
+      stopEvent(ev);
+      break;
+    default:
+      break;
+  }
+}
+
+// Rietveld uses a keydown handler on the document. Attach ours a level lower
+// to intercept things.
+$('html').keydown(handleKeyDown);
+
+function currentColumn() {
+  var row = domInspector.findSelectedRow();
+  var frameId = row.next().data('showingFrameId');
+  if (frameId) {
+    var links = row.find('.rb-diffLink');
+    var link = links.filter(function() { return $(this).data('frameId') == frameId; });
+    return link.data('columnId');
+  } else {
+    return 'rb-columnView';
+  }
+}
+
+function selectNextInColumn(ev) {
+  var dir = undefined;
+  if (ev && ev.detail) dir = ev.detail.dir;
+  var rows = $('.rb-diffRow');
+  var idx = rows.index(domInspector.findSelectedRow());
+  rows = rows.slice(idx + 1).find('.' + currentColumn()).closest('tr');
+  if (rows.length > 0) {
+    selectRow(rows.eq(0), dir);
+  }
+}
+
+function selectPrevInColumn(ev) {
+  var dir = undefined;
+  if (ev && ev.detail) dir = ev.detail.dir;
+  var rows = $('.rb-diffRow');
+  var idx = rows.index(domInspector.findSelectedRow());
+  rows = rows.slice(0, idx).find('.' + currentColumn()).closest('tr');
+  if (rows.length > 0) {
+    selectRow(rows.eq(rows.length - 1), dir);
+  }
+}
+
+document.addEventListener('rb-selectNextInColumn', selectNextInColumn);
+document.addEventListener('rb-selectPrevInColumn', selectPrevInColumn);

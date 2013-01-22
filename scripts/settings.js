@@ -21,7 +21,7 @@ var manifest = {
     "hideBaseUrl": {
       "type": "bool",
       "default": true,
-      "description": "Hide base URL section."
+      "description": "Add breakpoints to Base URL."
     },
     "enableAnimations": {
       "type": "bool",
