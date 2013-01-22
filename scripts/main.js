@@ -68,11 +68,9 @@ function hideFrame(row, finished) {
     });
 }
 
-function selectRow(row) {
-  var ev = document.createEvent('CustomEvent');
+function selectRow(row, dir) {
   var pos = $('.rb-diffRow').index(row);
-  ev.initCustomEvent('rb-gotoTrPos', false, false, { pos: pos });
-  document.dispatchEvent(ev);
+  sendCustomEvent('rb-gotoTrPos', { pos: pos, dir: dir });
 }
 
 function swapFrame(row, frame) {
@@ -556,21 +554,25 @@ function currentColumn() {
   }
 }
 
-function selectNextInColumn() {
+function selectNextInColumn(ev) {
+  var dir = undefined;
+  if (ev && ev.detail) dir = ev.detail.dir;
   var rows = $('.rb-diffRow');
   var idx = rows.index(domInspector.findSelectedRow());
   rows = rows.slice(idx + 1).find('.' + currentColumn()).closest('tr');
   if (rows.length > 0) {
-    selectRow(rows.eq(0));
+    selectRow(rows.eq(0), dir);
   }
 }
 
-function selectPrevInColumn() {
+function selectPrevInColumn(ev) {
+  var dir = undefined;
+  if (ev && ev.detail) dir = ev.detail.dir;
   var rows = $('.rb-diffRow');
   var idx = rows.index(domInspector.findSelectedRow());
   rows = rows.slice(0, idx).find('.' + currentColumn()).closest('tr');
   if (rows.length > 0) {
-    selectRow(rows.eq(rows.length - 1));
+    selectRow(rows.eq(rows.length - 1), dir);
   }
 }
 

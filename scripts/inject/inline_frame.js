@@ -36,6 +36,7 @@ decorateRecursive('M_getPageOffsetTop', function(func, el) {
     return func.call(this, el) + func.call(this, window.parent.document.getElementById(rb_frameId));
   });
 
+var rb_hookInitialized = false;
 // Rietveld calculates the position wrong (because the hook's offsetParent is no longer 'table-top'). Let's fix it.
 decorate('M_HookState.prototype.updateIndicator_', function(func, tr) {
     var ret = func.call(this, tr);
@@ -43,12 +44,27 @@ decorate('M_HookState.prototype.updateIndicator_', function(func, tr) {
     var tableTop = document.getElementById('table-top');
     this.indicator.style.top = String(M_getPageOffsetTop(tr) - M_getPageOffsetTop(offsetParent) - 1) + 'px';
     this.indicator.style.left = String(M_getPageOffsetLeft(tr) - M_getPageOffsetLeft(offsetParent)) + 'px';
+
+    if (!rb_hookInitialized) {
+      rb_hookInitialized = true;
+    } else if (this.indicated_element.id == 'codeTop') {
+      //sendCustomEvent('rb-selectPrevInColumn', { dir: 0 }, window.parent.document);
+      //window.parent.focus();
+    } else if (this.indicated_element.id == 'codeBottom') {
+      //sendCustomEvent('rb-selectNextInColumn', null, window.parent.document);
+      //window.parent.focus();
+    }
     return ret;
   });
+
+
 
 //loggingDecorator('M_HookState.prototype.updateIndicator_');
 
 //loggingDecorator('scrollTo');
 //loggingDecorator('M_getPageOffsetTop');
 
+decorate('M_HookState.prototype.updateIndicator_', function(func, tr) {
+    func.call(this, tr);
+  });
 

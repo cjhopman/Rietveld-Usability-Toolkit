@@ -59,6 +59,13 @@ function loggingDecorator(name) {
   decorate(name, logWrapper(name));
 }
 
+function sendCustomEvent(name, details, doc) {
+  doc = doc || document;
+  var ev = doc.createEvent('CustomEvent');
+  ev.initCustomEvent(name, false, false, details);
+  doc.dispatchEvent(ev);
+}
+
 if (chrome.extension) {
   injectScriptFile(document, chrome.extension.getURL('scripts/lib.js'));
 }

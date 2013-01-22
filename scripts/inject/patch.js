@@ -1,8 +1,10 @@
 document.addEventListener('rb-gotoTrPos', function(e) {
     var pos = e.detail.pos;
-    var dir = e.detail.dir;
-    if (dir == undefined) dir = 0;
+    var old = dashboardState.trPos;
     dashboardState.trPos = pos;
+
+    var dir = e.detail.dir;
+    if (dir == undefined) dir = pos - old;
     dashboardState.goto_(dir);
   });
 
