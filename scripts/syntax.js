@@ -1,7 +1,4 @@
 var codeLines = [];
-var brush = new SyntaxHighlighter.brushes.Java();
-
-addStyleLink('rb-syntaxTheme');
 
 function updateSyntaxTheme() {
   chrome.storage.sync.get('syntaxTheme', function(items) {
@@ -81,7 +78,7 @@ function splitToBlocks(arr, breaks) {
 }
 
 var blockMatches;
-function processCode() {
+function processCode(brush) {
   var start = new Date().getTime();
   // TODO: I shouldn't have to worry about calling taglinenumbers... it should just happen.
   tagLineNumbers();
@@ -145,8 +142,35 @@ function processCode() {
   var end = new Date().getTime();
 }
 
-processCode();
-domInspector.observeNewCodelines(processCode);
+function identifyBrush() {
+  var path = window.location.pathname;
+  var extension = path.indexOf('.') < 0 ? '' : path.substring(path.indexOf('.') + 1);
+  var brush = null;
+  $.each(brushes, function(_, b) {
+      if (b.extensions.indexOf(extension) >=0) {
+        brush = b;
+      }
+    });
+  return brush;
+}
+
+var brush = identifyBrush();
+
+function initializeHighlighting() {
+  brush.brush = new SyntaxHighlighter.brushes[brush.name]()
+  processCode(brush.brush);
+  domInspector.observeNewCodelines(function() { processCode(brush.brush); });
+}
+
+if (brush) {
+  chrome.extension.sendMessage(
+    {
+      action: 'load_script',
+      file: brush.path
+    }, function() {
+      initializeHighlighting();
+    });
+}
 
 
 

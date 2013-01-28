@@ -7,6 +7,8 @@ function addStyleLink(id) {
   $(document.documentElement).append($('<link class="rb-styleLink" type="text/css" rel="stylesheet" id="' + id + '"/>'));
 }
 
+addStyleLink('rb-syntaxTheme');
+
 addStyleNode('codelineStyle');
 addStyleNode('codelineColors');
 addStyleNode('codelineAdjust');

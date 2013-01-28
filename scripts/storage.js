@@ -58,7 +58,8 @@ function decorateChromeApis() {
       // Ensure values are valid for the type.
       $.each(items, function(k) {
         var val = items[k];
-        var type = manifest.settings[k].type;
+        var setting = manifest.settings[k];
+        var type = setting.type;
         switch (type) {
           case 'bool':
             if (typeof val != 'boolean') {
@@ -66,6 +67,13 @@ function decorateChromeApis() {
             }
             break;
           case 'dropdown':
+            if (typeof val != 'string') {
+              throw new Error('<' + val + '> is not a string');
+            }
+            if (setting.values.indexOf(val) < 0) {
+              throw new Error(val + ' is not a valid value for ' + k + '.');
+            }
+            break;
           case 'string':
             break;
           case 'dict':

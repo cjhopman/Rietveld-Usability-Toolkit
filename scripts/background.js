@@ -4,4 +4,14 @@ chrome.extension.onMessage.addListener(
       chrome.pageAction.show(sender.tab.id);
       sendResponse({});
     }
+    if (request.action == 'load_script') {
+      var details = {
+          file: request.file,
+          allFrames: true
+        };
+      chrome.tabs.executeScript(sender.tab.id, details, function() {
+          sendResponse();
+        });
+      return true;
+    }
   });

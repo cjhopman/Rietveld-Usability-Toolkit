@@ -1,11 +1,15 @@
 {
   "name": "Rietveld Usability Toolkit",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "manifest_version" : 2,
   "description": "This is a description",
   "permissions": [
     "tabs",
-    "storage"
+    "storage",
+    "*://codereview.appspot.com/*",
+    "*://chromiumcodereview.appspot.com/*",
+    "*://chromereviews.googleplex.com/*",
+    "*://codereview.chromium.org/*"
   ],
   "background" : {
     "page" : "background.html"
@@ -67,6 +71,7 @@
       "js": [
         "scripts/diff_begin.js"
       ],
+      "all_frames": true,
       "css": [
         "css/style.css"
       ],
@@ -82,8 +87,8 @@
       "all_frames": true,
       "js": [
         "lib/syntax/scripts/shCore.js",
-        "lib/syntax/brush/shBrushJava.js",
         "scripts/diff_idle.js",
+        "scripts/brush.js",
         "scripts/syntax.js"
       ],
       "run_at": "document_idle"
@@ -106,6 +111,31 @@
     "lib/syntax/themes/shThemeFadeToGrey.css",
     "lib/syntax/themes/shThemeMDUltra.css",
     "lib/syntax/themes/shThemeMidnight.css",
-    "lib/syntax/themes/shThemeRDark.css"
+    "lib/syntax/themes/shThemeRDark.css",
+    "lib/syntax/brush/shBrushAppleScript.js",
+    "lib/syntax/brush/shBrushCSharp.js",
+    "lib/syntax/brush/shBrushGroovy.js",
+    "lib/syntax/brush/shBrushPhp.js",
+    "lib/syntax/brush/shBrushSass.js",
+    "lib/syntax/brush/shBrushAS3.js",
+    "lib/syntax/brush/shBrushCss.js",
+    "lib/syntax/brush/shBrushJavaFX.js",
+    "lib/syntax/brush/shBrushPlain.js",
+    "lib/syntax/brush/shBrushScala.js",
+    "lib/syntax/brush/shBrushBash.js",
+    "lib/syntax/brush/shBrushDelphi.js",
+    "lib/syntax/brush/shBrushJava.js",
+    "lib/syntax/brush/shBrushPowerShell.js",
+    "lib/syntax/brush/shBrushSql.js",
+    "lib/syntax/brush/shBrushColdFusion.js",
+    "lib/syntax/brush/shBrushDiff.js",
+    "lib/syntax/brush/shBrushJScript.js",
+    "lib/syntax/brush/shBrushPython.js",
+    "lib/syntax/brush/shBrushVb.js",
+    "lib/syntax/brush/shBrushCpp.js",
+    "lib/syntax/brush/shBrushErlang.js",
+    "lib/syntax/brush/shBrushPerl.js",
+    "lib/syntax/brush/shBrushRuby.js",
+    "lib/syntax/brush/shBrushXml.js"
   ]
 }
