@@ -102,3 +102,10 @@ chrome.storage.onChanged.addListener(function(changes, namespace) {
   updateCodelineColors(true);
 }, ['changeReplaceColor', 'colorBlindMode']);
 
+
+function fixDarkLines() {
+  var html = createStyle(domInspector.codelineDark(), 'display', 'inline-block');
+  changeStyle('codelineAdjust', html);
+}
+fixDarkLines();
+

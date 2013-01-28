@@ -56,4 +56,3 @@ function highlight() {
   SyntaxHighlighter.all()
 }
 
-

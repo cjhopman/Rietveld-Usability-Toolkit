@@ -78,26 +78,8 @@ function splitToBlocks(arr, breaks) {
 }
 
 var blockMatches;
-function processCode(brush) {
+function highlightCode(brush) {
   var start = new Date().getTime();
-  // TODO: I shouldn't have to worry about calling taglinenumbers... it should just happen.
-  tagLineNumbers();
-  $(domInspector.codelineNew())
-    .find('.rb-code')
-    .filter(':not(.rb-codeProcessed)')
-    .addClass('rb-codeProcessed')
-    .each(appendCodeRow(codeLines, 0));
-
-  $(domInspector.codelineOld())
-    .find('.rb-code')
-    .filter(':not(.rb-codeProcessed)')
-    .addClass('rb-codeProcessed')
-    .each(appendCodeRow(codeLines, 1));
-
-  codeLines.sort(function(l, r) { return l.column != r.column ? l.column - r.column : l.line - r.line; });
-
-  // There may be matches from before, clear them.
-  $.each(codeLines, function(_, line) { line.matches = []; });
 
   var breaks = domInspector.getCodeBreaks().concat([Infinity]);
   breaks = [{ column: -1, line: -1 }]
@@ -142,6 +124,44 @@ function processCode(brush) {
   var end = new Date().getTime();
 }
 
+function clearHighlight() {
+  $.each(codeLines, function(_, line) {
+      line.self.html(line.code);
+    });
+}
+
+function updateCodeLines() {
+  // TODO: I shouldn't have to worry about calling taglinenumbers... it should just happen.
+  tagLineNumbers();
+  $(domInspector.codelineNew())
+    .find('.rb-code')
+    .filter(':not(.rb-codeProcessed)')
+    .addClass('rb-codeProcessed')
+    .each(appendCodeRow(codeLines, 0));
+
+  $(domInspector.codelineOld())
+    .find('.rb-code')
+    .filter(':not(.rb-codeProcessed)')
+    .addClass('rb-codeProcessed')
+    .each(appendCodeRow(codeLines, 1));
+
+  codeLines.sort(function(l, r) { return l.column != r.column ? l.column - r.column : l.line - r.line; });
+
+  // There may be matches from before, clear them.
+  $.each(codeLines, function(_, line) { line.matches = []; });
+}
+
+function processCode(brush) {
+  updateCodeLines();
+  chrome.storage.sync.get('enableSyntaxHighlight', function(items) {
+    if (items['enableSyntaxHighlight']) {
+      highlightCode(brush);
+    } else {
+      clearHighlight();
+    }
+  });
+}
+
 function identifyBrush() {
   var path = window.location.pathname;
   var extension = path.indexOf('.') < 0 ? '' : path.substring(path.indexOf('.') + 1);
@@ -160,6 +180,9 @@ function initializeHighlighting() {
   brush.brush = new SyntaxHighlighter.brushes[brush.name]()
   processCode(brush.brush);
   domInspector.observeNewCodelines(function() { processCode(brush.brush); });
+  chrome.storage.onChanged.addListener(function() {
+    processCode(brush.brush);
+  }, ['enableSyntaxHighlight']);
 }
 
 if (brush) {
