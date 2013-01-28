@@ -81,13 +81,13 @@
       ],
       "all_frames": true,
       "js": [
-        "lib/syntax_highlighter/scripts/shCore.js",
-        "lib/syntax_highlighter/scripts/shBrushJava.js",
+        "lib/syntax/scripts/shCore.js",
+        "lib/syntax/brush/shBrushJava.js",
         "scripts/diff_idle.js",
         "scripts/syntax.js"
       ],
       "css": [
-        "lib/syntax_highlighter/styles/shThemeDefault.css"
+        "lib/syntax/themes/shThemeDefault.css"
       ],
       "run_at": "document_idle"
     }
