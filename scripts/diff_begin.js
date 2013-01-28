@@ -3,6 +3,9 @@ if (!domInspector || !domInspector.isDiff()) throw new Error('hmm');
 function addStyleNode(id) {
   $(document.documentElement).append($('<style class="rb-style" id="' + id + '"/>'))
 }
+function addStyleLink(id) {
+  $(document.documentElement).append($('<link class="rb-styleLink" type="text/css" rel="stylesheet" id="' + id + '"/>'));
+}
 
 addStyleNode('codelineStyle');
 addStyleNode('codelineColors');

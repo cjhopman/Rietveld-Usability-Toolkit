@@ -72,6 +72,21 @@ var manifest = {
       "type": "bool",
       "default": false,
       "description": "Fix selection/copy in diff views. This does not work (for copy), see <a href=https://bugs.webkit.org/show_bug.cgi?id=80159> this webkit bug.</a>"
+    },
+    "syntaxTheme": {
+      "type": "dropdown",
+      "default": "Default",
+      "description": "Syntax highlighting theme.",
+      "values": [
+        "Default",
+        "Django",
+        "Eclipse",
+        "Emacs",
+        "FadeToGrey",
+        "MDUltra",
+        "Midnight",
+        "RDark"
+          ]
     }
   }
 }

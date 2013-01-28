@@ -1,11 +1,13 @@
 
 function tagLineNumbers() {
-  $(domInspector.codelineAll())
+  $(domInspector.codelineNew())
+    .add(domInspector.codelineOld())
     .filter(':not(.rb-hasLineNumber)')
     .addClass('rb-hasLineNumber')
     .each(function() {
       var html = $(this).html();
       var range = domInspector.lineNumberRange(html);
+      console.log(html);
       html = html.substring(0, range[0]) +
           '<span class="rb-lineNumber">' + html.substring(range[0], range[1]) + '</span>' +
           '<span class="rb-code">' + html.substring(range[1]) + '</span>'

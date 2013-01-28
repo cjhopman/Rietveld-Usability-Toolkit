@@ -1,6 +1,20 @@
 var codeLines = [];
 var brush = new SyntaxHighlighter.brushes.Java();
 
+addStyleLink('rb-syntaxTheme');
+
+function updateSyntaxTheme() {
+  chrome.storage.sync.get('syntaxTheme', function(items) {
+      var theme = items['syntaxTheme'];
+      var path = chrome.extension.getURL('lib/syntax/themes/shTheme' + theme + '.css');
+      $('#rb-syntaxTheme').attr('href', path);
+    });
+}
+updateSyntaxTheme();
+chrome.storage.onChanged.addListener(function() {
+  updateSyntaxTheme();
+}, ['syntaxTheme']);
+
 function appendCodeRow(arr, column) {
   return function() {
     var self = $(this);
@@ -52,7 +66,14 @@ function splitToBlocks(arr, breaks) {
       }
       var block = blocks[blocks.length - 1];
       block.rows.push(line);
-      block.code += line.code.replace('\n', ' ') + '\n';
+      block.code += line.code
+        .replace(/\n/g, ' ')
+        .replace(/<span class="oldlight">/g, '                       ')
+        .replace(/<span class="newlight">/g, '                       ')
+        .replace(/<span class="olddark">/g, '                      ')
+        .replace(/<span class="newdark">/g, '                      ')
+        .replace(/<\/span>/g, '       ')
+        + '\n';
       block.map.push(block.code.length)
       lastLine = line;
     });
@@ -95,14 +116,12 @@ function processCode() {
           match.rowIndex = match.index;
           if (rowIdx > 0) match.rowIndex -= block.map[rowIdx - 1];
           block.rows[rowIdx].matches.push(match);
-          console.log(match);
           while (match.index + match.length > block.map[rowIdx]) {
             var splitMatch = $.extend({}, match);
             splitMatch.rowIndex = 0;
             splitMatch.length = (match.index + match.length) - block.map[rowIdx];
             rowIdx++;
             block.rows[rowIdx].matches.push(splitMatch);
-            console.log(splitMatch);
           }
         });
       $.each(block.rows, function(_, row) {
@@ -124,7 +143,6 @@ function processCode() {
 
   $(domInspector.codelineAll()).addClass('syntaxhighlighter');
   var end = new Date().getTime();
-  console.log(start, end, end - start, (end - start) / 1000);
 }
 
 processCode();

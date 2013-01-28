@@ -65,6 +65,7 @@ function decorateChromeApis() {
               throw new Error('<' + val + '> is not a bool');
             }
             break;
+          case 'dropdown':
           case 'string':
             break;
           case 'dict':

@@ -62,7 +62,7 @@ function RietveldInspector() {
     return $('tr[id^="skip-"]').map(function() { return parseInt($(this).attr('id').substring(5)); }).get();
   }
   this.lineNumberRange = function(html) {
-    var m = html.match('( *(<u>)?\[0-9\]+(</u>)? )');
+    var m = html.match('((<span \[^>\]*>)? *(<u>)?\[0-9\]+(</u>)? (</span>)?)');
     if (!m) return [0, 0];
     var offset = html.indexOf(m[0]);
     return [offset, offset + m[0].length];

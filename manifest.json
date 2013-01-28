@@ -86,9 +86,6 @@
         "scripts/diff_idle.js",
         "scripts/syntax.js"
       ],
-      "css": [
-        "lib/syntax/themes/shThemeDefault.css"
-      ],
       "run_at": "document_idle"
     }
   ],
@@ -101,6 +98,14 @@
   "web_accessible_resources" : [
     "scripts/inject/inline_frame.js",
     "scripts/inject/patch.js",
-    "scripts/lib.js"
+    "scripts/lib.js",
+    "lib/syntax/themes/shThemeDefault.css",
+    "lib/syntax/themes/shThemeDjango.css",
+    "lib/syntax/themes/shThemeEclipse.css",
+    "lib/syntax/themes/shThemeEmacs.css",
+    "lib/syntax/themes/shThemeFadeToGrey.css",
+    "lib/syntax/themes/shThemeMDUltra.css",
+    "lib/syntax/themes/shThemeMidnight.css",
+    "lib/syntax/themes/shThemeRDark.css"
   ]
 }
