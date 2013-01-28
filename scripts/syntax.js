@@ -176,6 +176,7 @@ function identifyBrush() {
 
 var brush = identifyBrush();
 
+var highlightInitialized = false;
 function initializeHighlighting() {
   brush.brush = new SyntaxHighlighter.brushes[brush.name]()
   processCode(brush.brush);
@@ -183,6 +184,7 @@ function initializeHighlighting() {
   chrome.storage.onChanged.addListener(function() {
     processCode(brush.brush);
   }, ['enableSyntaxHighlight']);
+  highlightInitialized = true;
 }
 
 if (brush) {
@@ -191,10 +193,12 @@ if (brush) {
       action: 'load_script',
       file: brush.path
     }, function() {
-      // TODO: Sometimes we get an error when initializing highlighting in an inline frame... why?
-      setTimeout(initializeHighlighting, 10);
+      initializeHighlighting();
     });
 }
+// TODO: Sometimes we get an error when initializing highlighting in an inline frame... why?
+setTimeout(function() { if (!highlightInitialized) initializeHighlighting(); }, 200);
+setTimeout(function() { if (!highlightInitialized) initializeHighlighting(); }, 400);
 
 
 
