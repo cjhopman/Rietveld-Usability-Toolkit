@@ -5,6 +5,7 @@ chrome.extension.onMessage.addListener(
       sendResponse({});
     }
     if (request.action == 'load_script') {
+      // TODO: This isn't really what we want, we want to load the script into a specific frame...
       var details = {
           file: request.file,
           allFrames: true

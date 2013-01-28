@@ -191,7 +191,8 @@ if (brush) {
       action: 'load_script',
       file: brush.path
     }, function() {
-      initializeHighlighting();
+      // TODO: Sometimes we get an error when initializing highlighting in an inline frame... why?
+      setTimeout(initializeHighlighting, 10);
     });
 }
 
