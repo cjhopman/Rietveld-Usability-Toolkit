@@ -29,47 +29,6 @@
 .syntaxhighlighter .line.highlighted.number {
   color: white !important;
 }
-.syntaxhighlighter table caption {
-  color: #f8f8f8 !important;
-}
-.syntaxhighlighter .gutter {
-  color: #497958 !important;
-}
-.syntaxhighlighter .gutter .line {
-  border-right: 3px solid #41a83e !important;
-}
-.syntaxhighlighter .gutter .line.highlighted {
-  background-color: #41a83e !important;
-  color: #0a2b1d !important;
-}
-.syntaxhighlighter.printing .line .content {
-  border: none !important;
-}
-.syntaxhighlighter.collapsed {
-  overflow: visible !important;
-}
-.syntaxhighlighter.collapsed .toolbar {
-  color: #96dd3b !important;
-  background: black !important;
-  border: 1px solid #41a83e !important;
-}
-.syntaxhighlighter.collapsed .toolbar a {
-  color: #96dd3b !important;
-}
-.syntaxhighlighter.collapsed .toolbar a:hover {
-  color: white !important;
-}
-.syntaxhighlighter .toolbar {
-  color: white !important;
-  background: #41a83e !important;
-  border: none !important;
-}
-.syntaxhighlighter .toolbar a {
-  color: white !important;
-}
-.syntaxhighlighter .toolbar a:hover {
-  color: #ffe862 !important;
-}
 .syntaxhighlighter .plain, .syntaxhighlighter .plain a {
   color: #f8f8f8 !important;
 }
