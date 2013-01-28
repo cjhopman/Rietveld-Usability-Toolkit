@@ -60,7 +60,10 @@
   -webkit-transition: all 0.0s;
 }
 
-.rb-disableSelection {
+.rb-disableSelection .rb-codelineChrome,
+.rb-disableSelection .rb-lineNumber,
+.rb-disableSelectionNew .rb-codelineNew,
+.rb-disableSelectionOld .rb-codelineOld {
   -webkit-user-select: none;
   user-select: none;
 }

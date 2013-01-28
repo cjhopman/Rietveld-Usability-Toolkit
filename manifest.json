@@ -67,7 +67,9 @@
       "js": [
         "scripts/diff_begin.js"
       ],
-      "css": ["css/style.css"],
+      "css": [
+        "css/style.css"
+      ],
       "run_at": "document_start"
     },
     {
@@ -79,7 +81,13 @@
       ],
       "all_frames": true,
       "js": [
-        "scripts/diff_idle.js"
+        "lib/syntax_highlighter/scripts/shCore.js",
+        "lib/syntax_highlighter/scripts/shBrushJava.js",
+        "scripts/diff_idle.js",
+        "scripts/syntax.js"
+      ],
+      "css": [
+        "lib/syntax_highlighter/styles/shThemeDefault.css"
       ],
       "run_at": "document_idle"
     }

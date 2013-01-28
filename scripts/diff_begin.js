@@ -21,7 +21,8 @@ function changeStyle(id, style) {
 }
 
 function createStyle(selector, attr, value) {
-  return selector + '{' + attr + ':' + value + ' !important' + '}\n';
+  if (typeof(selector) == 'string') selector = [selector];
+  return $.map(selector, function(sel) { return sel + '{' + attr + ':' + value + ' !important' + '}\n'; }).join('\n');
 }
 
 function updateCodelineFont() {
@@ -46,13 +47,9 @@ function updateCodelineColors() {
 
     var html = createStyle(domInspector.codelineLight(), 'display', 'inline-block');
 
-    // The way that Rietveld does coloring is broken. So let's hack it some.
-    html += createStyle(domInspector.codelineDark(), 'background-color', 'rgba(0,0,0,0)');
-    html += createStyle(domInspector.codelineLight(), 'background-color', 'rgba(255,255,255,0.7)');
-
-    var deleteColor = '#faa';
-    var insertColor = '#9f9';
-    var replaceColor = '#9af';
+    var deleteColor = [255, 175, 175];
+    var insertColor = [159, 255, 159];
+    var replaceColor = [159, 175, 255];
 
     if (items['colorBlindMode']) {
       // From Cynthia Brewer's colorbrewer2.
@@ -64,9 +61,9 @@ function updateCodelineColors() {
       // insertColor = 'rgb(43, 255, 192)';
       // replaceColor = 'rgb(167, 161, 255)';
       // And modified just slightly after playing with compiz filters:
-      deleteColor = 'rgb(255, 112, 3)';
-      insertColor = 'rgb(43, 255, 162)';
-      replaceColor = 'rgb(167, 112, 255)';
+      deleteColor = [255, 112, 3];
+      insertColor = [43, 255, 162];
+      replaceColor = [167, 112, 255];
     }
 
     // Default Rietveld Colors;
@@ -77,10 +74,20 @@ function updateCodelineColors() {
       oldReplaceColor = newReplaceColor = replaceColor;
     }
 
-    html += createStyle(domInspector.codelineOldReplace(), 'background-color', oldReplaceColor);
-    html += createStyle(domInspector.codelineNewReplace(), 'background-color', newReplaceColor);
-    html += createStyle(domInspector.codelineOldDelete(), 'background-color', deleteColor);
-    html += createStyle(domInspector.codelineNewInsert(), 'background-color', insertColor);
+    function toColor(col, al) {
+      al = al || 0.0;
+      return 'rgb(' + String(Math.floor(col[0]  + (255 - col[0]) * al))
+          + ',' + String(Math.floor(col[1] + (255 - col[1]) * al)) + ','
+          + String(Math.floor(col[2] + (255 - col[2]) * al)) + ')';
+    }
+
+    html += createStyle(domInspector.codelineOldDelete(), 'background-color', toColor(deleteColor));
+    html += createStyle(domInspector.codelineNewInsert(), 'background-color', toColor(insertColor));
+
+    html += createStyle(domInspector.codelineOldReplaceDark(), 'background-color', toColor(oldReplaceColor));
+    html += createStyle(domInspector.codelineNewReplaceDark(), 'background-color', toColor(newReplaceColor));
+    html += createStyle(domInspector.codelineOldReplaceLight(), 'background-color', toColor(oldReplaceColor, 0.7));
+    html += createStyle(domInspector.codelineNewReplaceLight(), 'background-color', toColor(newReplaceColor, 0.7));
 
     changeStyle('codelineColors', html);
   });

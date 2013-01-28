@@ -20,6 +20,7 @@ function RietveldInspector() {
     return $('.issue-details').length > 0;
   };
   this.codelineAll = function() {  return '\
+      .oldlight, .olddark, .newlight, .newdark, \
       .oldreplace, .olddelete, .oldinsert, .oldequal, .oldblank, \
       .oldreplace1, .newreplace1, \
       .newreplace, .newdelete, .newinsert, .newequal, .newblank, \
@@ -39,13 +40,27 @@ function RietveldInspector() {
   };
   this.codelineLight = function() { return '.oldlight, .newlight'; };
   this.codelineDark = function() { return '.olddark, .newdark'; };
+
   this.codelineOldReplace = function() { return '.oldreplace, .oldreplace1'; };
   this.codelineNewReplace = function() { return '.newreplace, .newreplace1'; };
   this.codelineOldDelete = function() { return '.olddelete'; };
   this.codelineNewInsert = function() { return '.newinsert'; };
+
+  this.codelineOldReplaceDark = function() { return ['.oldreplace .olddark', '.oldreplace1 .olddark']; };
+  this.codelineNewReplaceDark = function() { return ['.newreplace .newdark', '.newreplace1 .newdark']; };
+  this.codelineOldReplaceLight = function() { return ['.oldreplace, .oldreplace1', '.oldreplace .oldlight', '.oldreplace1 .oldlight']; };
+  this.codelineNewReplaceLight = function() { return ['.newreplace, .newreplace1', '.newreplace .newlight', '.newreplace1 .newlight']; };
+
+  this.observeNewCodelines = function(func) {
+    new WebKitMutationObserver(func).observe($('#thecode tbody')[0], { childList: true });
+  }
+
   this.getCodelineInnerChrome = function() {
     return $('tr[id^="skip-"]').add('.inline-comments');
   };
+  this.getCodeBreaks = function() {
+    return $('tr[id^="skip-"]').map(function() { return parseInt($(this).attr('id').substring(5)); }).get();
+  }
   this.lineNumberRange = function(html) {
     var m = html.match('( *(<u>)?\[0-9\]+(</u>)? )');
     if (!m) return [0, 0];

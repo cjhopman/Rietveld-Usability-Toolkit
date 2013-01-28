@@ -5,6 +5,18 @@ Array.prototype.remove = function(from, to) {
   return this.push.apply(this, rest);
 };
 
+Array.prototype.lowerBound = function(v, cmp) {
+  cmp = cmp || function(l, r) { return l - r; };
+  var lo = 0, hi = this.length;
+  while (lo != hi) {
+    var mid = Math.floor((lo + hi) / 2);
+    var x = cmp(this[mid], v);
+    if (x < 0) lo = mid + 1;
+    else hi = mid;
+  }
+  return lo == this.length ? -1 : lo;
+}
+
 function injectScript(document, func) {
   var script = document.createElement('script');
   script.textContent = '(' + func + ')(' + JSON.stringify(Array.prototype.slice.call(arguments, 2)) + ')';
