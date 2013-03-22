@@ -2,6 +2,7 @@ var domInspector = null;
 
 var rietveldInstances = [
   "codereview.appspot.com",
+  "breakpad.appspot.com",
   "chromiumcodereview.appspot.com",
   "chromereviews.googleplex.com",
   "codereview.chromium.org"

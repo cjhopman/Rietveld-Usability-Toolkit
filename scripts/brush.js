@@ -64,6 +64,11 @@ var brushes = [
     extensions: [],
   },
   {
+    name: "Gyp",
+    path: "lib/syntax/brush/shBrushGyp.js",
+    extensions: ["gyp", "gypi"],
+  },
+  {
     name: "Java",
     path: "lib/syntax/brush/shBrushJava.js",
     extensions: [
