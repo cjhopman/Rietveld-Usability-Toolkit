@@ -7,6 +7,7 @@
     "tabs",
     "storage",
     "*://codereview.appspot.com/*",
+    "*://breakpad.appspot.com/*",
     "*://chromiumcodereview.appspot.com/*",
     "*://chromereviews.googleplex.com/*",
     "*://codereview.chromium.org/*"
@@ -27,6 +28,7 @@
     {
       "matches": [
         "*://codereview.appspot.com/*",
+        "*://breakpad.appspot.com/*",
         "*://chromiumcodereview.appspot.com/*",
         "*://chromereviews.googleplex.com/*",
         "*://codereview.chromium.org/*"
@@ -44,6 +46,7 @@
     {
       "matches": [
         "*://chromiumcodereview.appspot.com/*",
+        "*://breakpad.appspot.com/*",
         "*://codereview.appspot.com/*",
         "*://codereview.chromium.org/*",
         "*://chromereviews.googleplex.com/*"
@@ -64,6 +67,7 @@
     {
       "matches": [
         "*://chromiumcodereview.appspot.com/*/diff*",
+        "*://breakpad.appspot.com/*/diff*",
         "*://codereview.appspot.com/*/diff*",
         "*://codereview.chromium.org/*/diff*",
         "*://chromereviews.googleplex.com/*/diff*"
@@ -79,8 +83,9 @@
     },
     {
       "matches": [
-        "*://chromiumcodereview.appspot.com/*/diff*",
         "*://codereview.appspot.com/*/diff*",
+        "*://breakpad.appspot.com/*/diff*",
+        "*://chromiumcodereview.appspot.com/*/diff*",
         "*://codereview.chromium.org/*/diff*",
         "*://chromereviews.googleplex.com/*/diff*"
       ],
@@ -115,6 +120,7 @@
     "lib/syntax/brush/shBrushAppleScript.js",
     "lib/syntax/brush/shBrushCSharp.js",
     "lib/syntax/brush/shBrushGroovy.js",
+    "lib/syntax/brush/shBrushGyp.js",
     "lib/syntax/brush/shBrushPhp.js",
     "lib/syntax/brush/shBrushSass.js",
     "lib/syntax/brush/shBrushAS3.js",
