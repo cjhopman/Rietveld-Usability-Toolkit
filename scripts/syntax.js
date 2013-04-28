@@ -18,7 +18,8 @@ function appendCodeRow(arr, column) {
     var row = self.closest('tr');
     arr.push({
       self: self,
-      code: self.html(),
+      clone: self.clone(),
+      text: self.text(),
       line: parseInt(row.attr('id').substring(5)),
       column: column,
       matches: []
@@ -28,6 +29,8 @@ function appendCodeRow(arr, column) {
 
 function findMatches(code, brush) {
   var matches = [];
+
+  // Find all matches.
   $.map(brush.regexList, function(regexInfo) {
     var func = regexInfo.func || function(match) { return match[0] };
     var match;
@@ -39,6 +42,8 @@ function findMatches(code, brush) {
     }
   });
   matches.sort(function(l, r) { return l.index - r.index; });
+
+  // Remove overlapping matches.
   matches = matches.filter(function(v, idx) {
       if (idx == 0) return true;
       var prev = matches[idx - 1];
@@ -49,6 +54,7 @@ function findMatches(code, brush) {
 
 
 function splitToBlocks(arr, breaks) {
+  // Splits codelines into blocks (separated by the splits).
   var blocks = [];
   var nextBreakIdx = 0;
   var nextBreak = breaks[nextBreakIdx++];
@@ -56,28 +62,70 @@ function splitToBlocks(arr, breaks) {
       if (line.column > nextBreak.column || line.line > nextBreak.line) {
         blocks.push({
             rows: [],
-            code: '',
+            text: '',
             map: []
           });
         nextBreak = breaks[nextBreakIdx++];
       }
       var block = blocks[blocks.length - 1];
       block.rows.push(line);
-      block.code += line.code
-        .replace(/\n/g, ' ')
-        .replace(/<span class="oldlight">/g, '                       ')
-        .replace(/<span class="newlight">/g, '                       ')
-        .replace(/<span class="olddark">/g, '                      ')
-        .replace(/<span class="newdark">/g, '                      ')
-        .replace(/<\/span>/g, '       ')
-        + '\n';
-      block.map.push(block.code.length)
+      block.text += line.text + '\n';
+      block.map.push(block.text.length);
       lastLine = line;
     });
   return blocks;
 }
 
-var blockMatches;
+function applyMatchesToText(matches, text, offset) {
+  html = $('<span>');
+  position = 0;
+
+  $.each(matches, function(_, match) {
+      matchIndex = match.rowIndex - offset;
+      if (matchIndex < 0 || matchIndex >= text.length)
+        return;
+      matchLength = Math.min(match.length, text.length - matchIndex);
+      if (matchIndex != position) {
+        html.append(
+          document.createTextNode(text.substring(position, matchIndex)));
+      }
+      html.append($('<span/>').addClass(match.css).append(
+          document.createTextNode(text.substring(matchIndex, matchIndex + matchLength))));
+      position = matchIndex + matchLength;
+    });
+  html.append(document.createTextNode(text.substring(position)));
+  return [html, text.length];
+}
+
+function applyMatchesToHtml(matches, html, offset) {
+  var contents = html.contents();
+  var res = html.html('');
+  var offset = 0;
+  $.each(contents, function(_, el) {
+      inner = null;
+      if (el.nodeType == 3) {
+        inner = applyMatchesToText(matches, el.nodeValue, offset);
+      } else {
+        inner = applyMatchesToHtml(matches, $(el), offset);
+      }
+      res.append(inner[0]);
+      offset += inner[1];
+    })
+  return [res, offset];
+}
+
+function applyMatchesForRow(row) {
+  var position = 0;
+  // Remove overlapping matches?? Why am I doing this a second time?
+  row.matches = row.matches.filter(function(match) {
+      if (position > match.rowIndex) return false;
+      position = match.rowIndex + match.length;
+      return true;
+    });
+  row.self.html(applyMatchesToHtml(row.matches.slice(), row.clone.clone(), 0)[0])
+}
+
+var blockMatches
 function highlightCode(brush) {
   var start = new Date().getTime();
 
@@ -87,9 +135,10 @@ function highlightCode(brush) {
     .concat($.map(breaks, function(v) { return { column: 1, line: v }; }));
 
   var codeBlocks = splitToBlocks(codeLines, breaks);
-  blockMatches = $.each(codeBlocks, function(_, bl) { bl.matches = findMatches(bl.code, brush) });
+  blockMatches = $.each(codeBlocks, function(_, bl) { bl.matches = findMatches(bl.text, brush) });
 
   $.each(blockMatches, function(_, block) {
+      // Split matches at line breaks.
       $.each(block.matches, function(_, match) {
           rowIdx = block.map.lowerBound(match.index + 1);
           match.rowIndex = match.index;
@@ -103,21 +152,10 @@ function highlightCode(brush) {
             block.rows[rowIdx].matches.push(splitMatch);
           }
         });
+
       $.each(block.rows, function(_, row) {
-          var html = row.code;
-          var position = 0;
-          row.matches = row.matches.filter(function(match) {
-              if (position > match.rowIndex) return false;
-              position = match.rowIndex + match.length;
-              return true;
-            });
-          $.each(row.matches.slice().reverse(), function(_, match) {
-              html = html.substring(0, match.rowIndex)
-                + '<span class="' + match.css + '">' + html.substring(match.rowIndex, match.rowIndex + match.length) + '</span>'
-                + html.substring(match.rowIndex + match.length);
-            });
-          row.self.html(html);
-        });
+        applyMatchesForRow(row)
+      });
     });
 
   $(domInspector.codelineAll()).addClass('syntaxhighlighter');
@@ -126,7 +164,7 @@ function highlightCode(brush) {
 
 function clearHighlight() {
   $.each(codeLines, function(_, line) {
-      line.self.html(line.code);
+      line.self.html(line.clone.html());
     });
 }
 
