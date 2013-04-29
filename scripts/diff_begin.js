@@ -14,6 +14,7 @@ addStyleNode('codelineColors');
 addStyleNode('codelineAdjust');
 addStyleNode('codelineFontSize');
 addStyleNode('codelineSelectionFixer');
+addStyleNode('lineNumberColor');
 
 var changeStyleId = 0;
 function changeStyle(id, style) {
@@ -118,6 +119,20 @@ updateCodelineColors();
 chrome.storage.onChanged.addListener(function(changes, namespace) {
   updateCodelineColors(true);
 }, ['changeReplaceColor', 'colorBlindMode']);
+
+function updateLineNumberColor() {
+  chrome.storage.sync.get(['lineNumberColorEnabled'] , function(items) {
+    var html = '';
+    if (items['lineNumberColorEnabled']) {
+      html = createStyle('.rb-lineNumber', 'color', 'rgb(128, 128, 128)')
+    }
+    changeStyle('lineNumberColor', html);
+  });
+}
+updateLineNumberColor();
+chrome.storage.onChanged.addListener(function(changes, namespace) {
+  updateLineNumberColor();
+}, ['lineNumberColorEnabled']);
 
 
 function fixDarkLines() {

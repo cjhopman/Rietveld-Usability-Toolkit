@@ -53,6 +53,11 @@ var manifest = {
       "default": false,
       "description": "Make diff color coding more colorblind friendly (maybe)."
     },
+    "lineNumberColorEnabled": {
+      "type": "bool",
+      "default": true,
+      "description": "Lighten up the line numbers."
+    },
     "changeReplaceColor": {
       "type": "bool",
       "default": true,
