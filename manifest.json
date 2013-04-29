@@ -13,7 +13,8 @@
     "*://codereview.chromium.org/*"
   ],
   "background" : {
-    "page" : "background.html"
+    "scripts": [ "scripts/background.js" ],
+    "persistent": false
   },
   "page_action" :
   {
