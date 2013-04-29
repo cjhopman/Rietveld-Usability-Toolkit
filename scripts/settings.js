@@ -92,6 +92,29 @@ var manifest = {
         "Midnight",
         "RDark"
           ]
-    }
+    },
+    "codeFontSizeEnabled": {
+      "type": "bool",
+      "default": false,
+      "description": "Change font size used for code lines."
+    },
+    "codeFontSize": {
+      "type": "dropdown",
+      "default": "12px",
+      "description": "Font for code lines.",
+      "values": [
+        " 8px",
+        " 9px",
+        "10px",
+        "11px",
+        "12px",
+        "13px",
+        "14px",
+        "15px",
+        "16px",
+        "17px",
+        "18px",
+          ]
+    },
   }
 }

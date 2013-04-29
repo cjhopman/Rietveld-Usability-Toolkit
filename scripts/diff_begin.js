@@ -12,6 +12,7 @@ addStyleLink('rb-syntaxTheme');
 addStyleNode('codelineStyle');
 addStyleNode('codelineColors');
 addStyleNode('codelineAdjust');
+addStyleNode('codelineFontSize');
 addStyleNode('codelineSelectionFixer');
 
 var changeStyleId = 0;
@@ -43,6 +44,22 @@ updateCodelineFont();
 chrome.storage.onChanged.addListener(function(changes, namespace) {
   updateCodelineFont();
 }, ['codeFontEnabled', 'codeFont']);
+
+function updateCodelineFontSize() {
+  chrome.storage.sync.get(['codeFontSizeEnabled', 'codeFontSize'] , function(items) {
+    var html = '';
+    console.log(items)
+    console.log(items['codeFontSizeEnabled'])
+    if (items['codeFontSizeEnabled']) {
+      html = createStyle(domInspector.codelineAll(), 'font-size', items['codeFontSize'])
+    }
+    changeStyle('codelineFontSize', html);
+  });
+}
+updateCodelineFontSize();
+chrome.storage.onChanged.addListener(function(changes, namespace) {
+  updateCodelineFontSize();
+}, ['codeFontSizeEnabled', 'codeFontSize']);
 
 function updateCodelineColors() {
   chrome.storage.sync.get(['changeReplaceColor', 'colorBlindMode'] , function(items) {

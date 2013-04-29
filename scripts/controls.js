@@ -26,6 +26,12 @@ function addDropdown(container, name, setting) {
       drop.append($('<option/>').attr('value', v).text(v));
     });
 
+  chrome.storage.sync.get([name] , function(items) {
+      drop.children().each(function() {
+          $(this).prop('selected', $(this).text() == items[name])
+        });
+    });
+
   function update() {
     chrome.storage.sync.get(name, function(items) {
       //check.removeAttr('disabled');
@@ -37,7 +43,6 @@ function addDropdown(container, name, setting) {
   drop.change(function() {
     var change = {};
     change[name] = $(this).find(':selected').text();
-    console.log(change);
     chrome.storage.sync.set(change);
   });
   div.append(drop).append($('<span/>').html(setting.description));
