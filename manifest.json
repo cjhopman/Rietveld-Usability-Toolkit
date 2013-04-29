@@ -1,6 +1,6 @@
 {
   "name": "Rietveld Usability Toolkit",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "manifest_version" : 2,
   "description": "Making Rietveld usable",
   "permissions": [
