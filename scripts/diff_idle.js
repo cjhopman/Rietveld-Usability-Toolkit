@@ -1,20 +1,30 @@
 
 function tagLineNumbers() {
-  $(domInspector.codelineOldNew())
+  $(domInspector.codelineNew())
     .filter(':not(.rb-hasLineNumber)')
     .addClass('rb-hasLineNumber')
-    .wrapInner('<span class="rb-code">')
+    .addClass('rb-codelineNew')
     .each(function() {
-      return
       var html = $(this).html();
       var range = domInspector.lineNumberRange(html);
       html = html.substring(0, range[0]) +
           '<span class="rb-lineNumber">' + html.substring(range[0], range[1]) + '</span>' +
-          '<span class="rb-code">' + html.substring(range[1]) + '</span>'
+          '<span class="rb-code rb-innerCodeNew">' + html.substring(range[1]) + '</span>'
       $(this).html(html);
     });
-  $(domInspector.codelineNew()).addClass('rb-codelineNew');
-  $(domInspector.codelineOld()).addClass('rb-codelineOld');
+
+  $(domInspector.codelineOld())
+    .filter(':not(.rb-hasLineNumber)')
+    .addClass('rb-hasLineNumber')
+    .addClass('rb-codelineOld')
+    .each(function() {
+      var html = $(this).html();
+      var range = domInspector.lineNumberRange(html);
+      html = html.substring(0, range[0]) +
+          '<span class="rb-lineNumber">' + html.substring(range[0], range[1]) + '</span>' +
+          '<span class="rb-code rb-innerCodeOld">' + html.substring(range[1]) + '</span>'
+      $(this).html(html);
+    });
 }
 timingDecorator('tagLineNumbers');
 tagLineNumbers();

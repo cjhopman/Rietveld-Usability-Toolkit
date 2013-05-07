@@ -13,20 +13,18 @@ chrome.storage.onChanged.addListener(function() {
   updateSyntaxTheme();
 }, ['syntaxTheme']);
 
-function appendCodeRow(arr, column) {
-  return function() {
-    var self = $(this);
-    var row = self.closest('tr');
-    arr.push({
-      self: self,
-      node: this,
-      clone: self.clone(),
-      text: self.text(),
-      line: parseInt(row.attr('id').substring(5)),
-      column: column,
-      matches: []
-    });
-  };
+function appendCodeRow(arr, column, node) {
+  var self = $(node);
+  var row = self.closest('tr');
+  arr.push({
+    node: node,
+    displayNode: node,
+    html: self.html(),
+    text: self.text(),
+    line: parseInt(row.attr('id').substring(5)),
+    column: column,
+    matches: []
+  });
 }
 
 function findMatches(code, brush) {
@@ -123,7 +121,7 @@ function applyMatchesToHtml(matches, node, offset) {
 }
 
 function applyMatchesForRow(row) {
-  row.displayHtml = $(applyMatchesToHtml(row.matches.slice(), row.clone[0], 0)).html()
+  row.brushedNode = applyMatchesToHtml(row.matches.slice(), row.node, 0)[0];
 }
 
 function updateDisplayedHtml(codeBlocks) {
@@ -131,7 +129,8 @@ function updateDisplayedHtml(codeBlocks) {
     var block = codeBlocks[i];
     for (var j = 0; j < block.rows.length; j++) {
       var row = block.rows[j];
-      row.node.innerHTML = row.displayHtml;
+      row.displayNode.parentNode.replaceChild(row.brushedNode, row.displayNode);
+      row.displayNode = row.brushedNode;
     }
   }
 }
@@ -175,32 +174,32 @@ function findAllMatches(brush) {
 }
 
 function highlightCode(brush) {
-  updateDisplayedHtml(codeBlocks);
-  $(domInspector.codeTableBody()).addClass('syntaxhighlighter');
+  $(domInspector.codeTableBody()).toggleClass('syntaxhighlighter', true);
 }
 
 timingDecorator('highlightCode')
 
 function clearHighlight() {
-  $.each(codeLines, function(_, line) {
-      line.node.innerHTML = line.clone.html();
-    });
+  $(domInspector.codeTableBody()).toggleClass('syntaxhighlighter', false);
 }
 
 function updateCodeLines() {
   // TODO: I shouldn't have to worry about calling taglinenumbers... it should just happen.
   tagLineNumbers();
-  $(domInspector.codelineNew())
-    .find('.rb-code')
-    .filter(':not(.rb-codeProcessed)')
-    .addClass('rb-codeProcessed')
-    .each(appendCodeRow(codeLines, 0));
 
-  $(domInspector.codelineOld())
-    .find('.rb-code')
-    .filter(':not(.rb-codeProcessed)')
-    .addClass('rb-codeProcessed')
-    .each(appendCodeRow(codeLines, 1));
+  newLines = document.querySelectorAll('.rb-innerCodeNew:not(.rb-codeProcessed)');
+  for (var i = 0; i < newLines.length; i++) {
+    line = newLines[i];
+    line.classList.add('rb-codeProcessed');
+    appendCodeRow(codeLines, 0, line);
+  }
+
+  oldLines = document.querySelectorAll('.rb-innerCodeOld:not(.rb-codeProcessed)');
+  for (var i = 0; i < oldLines.length; i++) {
+    line = oldLines[i];
+    line.classList.add('rb-codeProcessed');
+    appendCodeRow(codeLines, 1, line);
+  }
 
   codeLines.sort(function(l, r) { return l.column != r.column ? l.column - r.column : l.line - r.line; });
 }
@@ -220,6 +219,7 @@ timingDecorator('updateHighlight')
 function processCode(brush) {
   updateCodeLines();
   findAllMatches(brush);
+  updateDisplayedHtml(codeBlocks);
   updateHighlight(brush);
 }
 
