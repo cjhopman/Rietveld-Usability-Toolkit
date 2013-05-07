@@ -19,6 +19,7 @@ function appendCodeRow(arr, column) {
     var row = self.closest('tr');
     arr.push({
       self: self,
+      node: this,
       clone: self.clone(),
       text: self.text(),
       line: parseInt(row.attr('id').substring(5)),
@@ -130,7 +131,7 @@ function updateDisplayedHtml(codeBlocks) {
     var block = codeBlocks[i];
     for (var j = 0; j < block.rows.length; j++) {
       var row = block.rows[j];
-      row.self.html(row.displayHtml);
+      row.node.innerHTML = row.displayHtml;
     }
   }
 }
@@ -182,7 +183,7 @@ timingDecorator('highlightCode')
 
 function clearHighlight() {
   $.each(codeLines, function(_, line) {
-      line.self.html(line.clone.html());
+      line.node.innerHTML = line.clone.html();
     });
 }
 
