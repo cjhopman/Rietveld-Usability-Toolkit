@@ -29,6 +29,13 @@ function RietveldInspector() {
       .newmove, .newchangemove, .newchangemove1, \
       .udiffadd, .udiffremove, .udiff, .debug-info';
   };
+  this.codelineOldNew = function() { return '\
+      .oldreplace, .olddelete, .oldinsert, .oldequal, .oldblank, .oldreplace1, \
+      .oldmove, .oldchangemove, .oldchangemove1, .oldmove_out, .oldchangemove_out, \
+      .newreplace1, .newreplace, .newdelete, .newinsert, .newequal, .newblank, \
+      .newmove, .newchangemove, .newchangemove1, \
+      .rb-null';
+  };
   this.codelineOld = function() { return '\
       .oldreplace, .olddelete, .oldinsert, .oldequal, .oldblank, .oldreplace1, \
       .oldmove, .oldchangemove, .oldchangemove1, .oldmove_out, .oldchangemove_out, \
@@ -52,8 +59,10 @@ function RietveldInspector() {
   this.codelineOldReplaceLight = function() { return ['.oldreplace, .oldreplace1', '.oldreplace .oldlight', '.oldreplace1 .oldlight']; };
   this.codelineNewReplaceLight = function() { return ['.newreplace, .newreplace1', '.newreplace .newlight', '.newreplace1 .newlight']; };
 
+  this.codeTableBody = function() { return '#thecode tbody'; }
+
   this.observeNewCodelines = function(func) {
-    new WebKitMutationObserver(func).observe($('#thecode tbody')[0], { childList: true });
+    new WebKitMutationObserver(func).observe($(this.codeTableBody())[0], { childList: true });
   }
 
   this.getCodelineInnerChrome = function() {

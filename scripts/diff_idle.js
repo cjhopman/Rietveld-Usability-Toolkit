@@ -1,7 +1,6 @@
 
 function tagLineNumbers() {
-  $(domInspector.codelineNew())
-    .add(domInspector.codelineOld())
+  $(domInspector.codelineOldNew())
     .filter(':not(.rb-hasLineNumber)')
     .addClass('rb-hasLineNumber')
     .each(function() {
@@ -15,6 +14,7 @@ function tagLineNumbers() {
   $(domInspector.codelineNew()).addClass('rb-codelineNew');
   $(domInspector.codelineOld()).addClass('rb-codelineOld');
 }
+timingDecorator('tagLineNumbers');
 tagLineNumbers();
 domInspector.observeNewCodelines(tagLineNumbers);
 

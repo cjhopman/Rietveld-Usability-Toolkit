@@ -31,13 +31,14 @@ function injectScriptFile(document, file) {
 }
 
 var logDepth = 0;
-function logWrapper(name) { return function(func) {
+function logWrapper(name, pre, post) {
+  return function (func) {
     var args = [].slice.call(arguments, 1);
-    console.log(Array(logDepth + 1).join('_'), name, args);
+    pre(args);
     logDepth++;
     var ret = func.apply(this, args);
     logDepth--;
-    console.log(Array(logDepth + 1).join('_'), 'Return Value: ', ret);
+    post(ret);
     return ret;
   };
 }
@@ -68,7 +69,27 @@ function decorateRecursive(name, func) {
 }
 
 function loggingDecorator(name) {
-  decorate(name, logWrapper(name));
+  decorate(name, logWrapper(name, 
+        function(args) {
+          console.log(Array(logDepth + 1).join('_'), name, args);
+        },
+        function(ret) {
+          console.log(Array(logDepth + 1).join('_'), name, ret);
+        }));
+}
+
+function timingDecorator(name) {
+  var start;
+  decorate(name, logWrapper(name, 
+        function() {
+          start = performance.now();
+          var args = [].slice.call(arguments, 1);
+          console.log(Array(logDepth + 1).join('_'), name, 'start: ' + start);
+        },
+        function(ret) {
+          end = performance.now();
+          console.log(Array(logDepth + 1).join('_'), name, 'end: ' + end, 'elapsed: ' + (end - start));
+        }));
 }
 
 function sendCustomEvent(name, details, doc) {

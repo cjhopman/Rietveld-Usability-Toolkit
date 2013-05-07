@@ -49,8 +49,6 @@ chrome.storage.onChanged.addListener(function(changes, namespace) {
 function updateCodelineFontSize() {
   chrome.storage.sync.get(['codeFontSizeEnabled', 'codeFontSize'] , function(items) {
     var html = '';
-    console.log(items)
-    console.log(items['codeFontSizeEnabled'])
     if (items['codeFontSizeEnabled']) {
       html = createStyle(domInspector.codelineAll(), 'font-size', items['codeFontSize'])
     }

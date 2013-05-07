@@ -43,11 +43,12 @@ function findMatches(code, brush) {
   });
   matches.sort(function(l, r) { return l.index - r.index; });
 
+  var position = 0;
   // Remove overlapping matches.
   matches = matches.filter(function(v, idx) {
-      if (idx == 0) return true;
-      var prev = matches[idx - 1];
-      return prev.index + prev.length < v.index;
+      if (v.index < position) return false;
+      position = v.index + v.length;
+      return true;
     });
   return matches;
 }
@@ -77,22 +78,23 @@ function splitToBlocks(arr, breaks) {
 }
 
 function applyMatchesToText(matches, text, offset) {
-  html = $('<span>');
-  position = 0;
+  var html = $('<span>');
+  var position = 0;
 
-  $.each(matches, function(_, match) {
-      matchIndex = match.rowIndex - offset;
-      if (matchIndex < 0 || matchIndex >= text.length)
-        return;
-      matchLength = Math.min(match.length, text.length - matchIndex);
-      if (matchIndex != position) {
-        html.append(
-          document.createTextNode(text.substring(position, matchIndex)));
-      }
-      html.append($('<span/>').addClass(match.css).append(
-          document.createTextNode(text.substring(matchIndex, matchIndex + matchLength))));
-      position = matchIndex + matchLength;
-    });
+  for (var i = 0; i < matches.length; i++) {
+    var match = matches[i];
+    var matchIndex = match.rowIndex - offset;
+    if (matchIndex < 0 || matchIndex >= text.length)
+      return;
+    var matchLength = Math.min(match.length, text.length - matchIndex);
+    if (matchIndex != position) {
+      html.append(
+        document.createTextNode(text.substring(position, matchIndex)));
+    }
+    html.append($('<span/>').addClass(match.css).append(
+        document.createTextNode(text.substring(matchIndex, matchIndex + matchLength))));
+    position = matchIndex + matchLength;
+  }
   html.append(document.createTextNode(text.substring(position)));
   return [html, text.length];
 }
@@ -100,67 +102,72 @@ function applyMatchesToText(matches, text, offset) {
 function applyMatchesToHtml(matches, html, offset) {
   var contents = html.contents();
   var res = html.html('');
-  var offset = 0;
-  $.each(contents, function(_, el) {
-      inner = null;
-      if (el.nodeType == 3) {
-        inner = applyMatchesToText(matches, el.nodeValue, offset);
-      } else {
-        inner = applyMatchesToHtml(matches, $(el), offset);
-      }
-      res.append(inner[0]);
-      offset += inner[1];
-    })
+  var offset = offset || 0;
+  for (var i = 0; i < contents.length; i++) {
+    var el = contents[i];
+    var inner = null;
+    if (el.nodeType == 3) {
+      inner = applyMatchesToText(matches, el.nodeValue, offset);
+    } else {
+      inner = applyMatchesToHtml(matches, $(el), offset);
+    }
+    res.append(inner[0]);
+    offset += inner[1];
+  }
   return [res, offset];
 }
 
 function applyMatchesForRow(row) {
-  var position = 0;
-  // Remove overlapping matches?? Why am I doing this a second time?
-  row.matches = row.matches.filter(function(match) {
-      if (position > match.rowIndex) return false;
-      position = match.rowIndex + match.length;
-      return true;
-    });
-  row.self.html(applyMatchesToHtml(row.matches.slice(), row.clone.clone(), 0)[0])
+  row.displayHtml = applyMatchesToHtml(row.matches.slice(), row.clone.clone(), 0)[0]
 }
 
-var blockMatches
+function updateDisplayedHtml(codeBlocks) {
+  for (var i = 0; i < codeBlocks.length; i++) {
+    var block = codeBlocks[i];
+    for (var j = 0; j < block.rows.length; j++) {
+      var row = block.rows[j];
+      row.self.html(row.displayHtml);
+    }
+  }
+}
+timingDecorator('updateDisplayedHtml')
 function highlightCode(brush) {
-  var start = new Date().getTime();
-
   var breaks = domInspector.getCodeBreaks().concat([Infinity]);
   breaks = [{ column: -1, line: -1 }]
     .concat($.map(breaks, function(v) { return { column: 0, line: v }; }))
     .concat($.map(breaks, function(v) { return { column: 1, line: v }; }));
 
   var codeBlocks = splitToBlocks(codeLines, breaks);
-  blockMatches = $.each(codeBlocks, function(_, bl) { bl.matches = findMatches(bl.text, brush) });
+  $.each(codeBlocks, function(_, bl) { bl.matches = findMatches(bl.text, brush) });
 
-  $.each(blockMatches, function(_, block) {
-      // Split matches at line breaks.
-      $.each(block.matches, function(_, match) {
-          rowIdx = block.map.lowerBound(match.index + 1);
-          match.rowIndex = match.index;
-          if (rowIdx > 0) match.rowIndex -= block.map[rowIdx - 1];
-          block.rows[rowIdx].matches.push(match);
-          while (match.index + match.length > block.map[rowIdx]) {
-            var splitMatch = $.extend({}, match);
-            splitMatch.rowIndex = 0;
-            splitMatch.length = (match.index + match.length) - block.map[rowIdx];
-            rowIdx++;
-            block.rows[rowIdx].matches.push(splitMatch);
-          }
-        });
+  for (var i = 0; i < codeBlocks.length; i++) {
+    var block = codeBlocks[i];
+    // Split matches at line breaks.
+    for (var j = 0; j < block.matches.length; j++) {
+      var match = block.matches[j];
+      var rowIdx = block.map.lowerBound(match.index + 1);
+      match.rowIndex = match.index;
+      if (rowIdx > 0) match.rowIndex -= block.map[rowIdx - 1];
+      block.rows[rowIdx].matches.push(match);
+      while (match.index + match.length > block.map[rowIdx]) {
+        var splitMatch = $.extend({}, match);
+        splitMatch.rowIndex = 0;
+        splitMatch.length = (match.index + match.length) - block.map[rowIdx];
+        rowIdx++;
+        block.rows[rowIdx].matches.push(splitMatch);
+      }
+    }
 
-      $.each(block.rows, function(_, row) {
-        applyMatchesForRow(row)
-      });
-    });
+    for (var j = 0; j < block.rows.length; j++) {
+      var row = block.rows[j];
+      applyMatchesForRow(row);
+    }
+  }
+  updateDisplayedHtml(codeBlocks);
 
-  $(domInspector.codelineAll()).addClass('syntaxhighlighter');
-  var end = new Date().getTime();
+  $(domInspector.codeTableBody()).addClass('syntaxhighlighter');
 }
+timingDecorator('highlightCode')
 
 function clearHighlight() {
   $.each(codeLines, function(_, line) {
@@ -188,6 +195,7 @@ function updateCodeLines() {
   // There may be matches from before, clear them.
   $.each(codeLines, function(_, line) { line.matches = []; });
 }
+timingDecorator('updateCodeLines')
 
 function processCode(brush) {
   updateCodeLines();
