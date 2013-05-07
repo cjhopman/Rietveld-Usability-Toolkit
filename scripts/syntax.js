@@ -19,7 +19,7 @@ function appendCodeRow(arr, column, node) {
   arr.push({
     node: node,
     displayNode: node,
-    html: self.html(),
+    html: node.innerHTML,
     text: self.text(),
     line: parseInt(row.attr('id').substring(5)),
     column: column,

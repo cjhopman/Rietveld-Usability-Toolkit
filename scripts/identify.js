@@ -36,15 +36,37 @@ function RietveldInspector() {
       .newmove, .newchangemove, .newchangemove1, \
       .rb-null';
   };
-  this.codelineOld = function() { return '\
-      .oldreplace, .olddelete, .oldinsert, .oldequal, .oldblank, .oldreplace1, \
-      .oldmove, .oldchangemove, .oldchangemove1, .oldmove_out, .oldchangemove_out, \
-      .rb-null';
+  this.codelineOldClasses = [
+    '.oldreplace',
+    '.olddelete',
+    '.oldinsert',
+    '.oldequal',
+    '.oldblank',
+    '.oldreplace1',
+    '.oldmove',
+    '.oldchangemove',
+    '.oldchangemove1',
+    '.oldmove_out',
+    '.oldchangemove_out',
+    ];
+  this.codelineNewClasses = [
+    '.newreplace1',
+    '.newreplace',
+    '.newdelete',
+    '.newinsert',
+    '.newequal',
+    '.newblank',
+    '.newmove',
+    '.newchangemove',
+    '.newchangemove1',
+    ];
+  this.codelineNew = function(append) {
+    append = append || '';
+    return this.codelineNewClasses.map(function(x) { return x + append; }).join(', ');
   };
-  this.codelineNew = function() {  return '\
-      .newreplace1, .newreplace, .newdelete, .newinsert, .newequal, .newblank, \
-      .newmove, .newchangemove, .newchangemove1, \
-      .rb-null';
+  this.codelineOld = function(append) {
+    append = append || '';
+    return this.codelineOldClasses.map(function(x) { return x + append; }).join(', ');
   };
   this.codelineLight = function() { return '.oldlight, .newlight'; };
   this.codelineDark = function() { return '.olddark, .newdark'; };
