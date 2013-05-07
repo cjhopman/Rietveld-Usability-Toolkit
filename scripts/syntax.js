@@ -1,4 +1,5 @@
 var codeLines = [];
+var codeBlocks;
 
 function updateSyntaxTheme() {
   chrome.storage.sync.get('syntaxTheme', function(items) {
@@ -78,30 +79,33 @@ function splitToBlocks(arr, breaks) {
 }
 
 function applyMatchesToText(matches, text, offset) {
-  var html = $('<span>');
+  var outer = document.createElement('span');
   var position = 0;
 
   for (var i = 0; i < matches.length; i++) {
     var match = matches[i];
     var matchIndex = match.rowIndex - offset;
     if (matchIndex < 0 || matchIndex >= text.length)
-      return;
+      continue;
     var matchLength = Math.min(match.length, text.length - matchIndex);
     if (matchIndex != position) {
-      html.append(
+      outer.appendChild(
         document.createTextNode(text.substring(position, matchIndex)));
     }
-    html.append($('<span/>').addClass(match.css).append(
-        document.createTextNode(text.substring(matchIndex, matchIndex + matchLength))));
+    inner = document.createElement('span');
+    inner.classList.add(match.css);
+    inner.appendChild(
+        document.createTextNode(text.substring(matchIndex, matchIndex + matchLength)));
+    outer.appendChild(inner);
     position = matchIndex + matchLength;
   }
-  html.append(document.createTextNode(text.substring(position)));
-  return [html, text.length];
+  outer.appendChild(document.createTextNode(text.substring(position)));
+  return [outer, text.length];
 }
 
-function applyMatchesToHtml(matches, html, offset) {
-  var contents = html.contents();
-  var res = html.html('');
+function applyMatchesToHtml(matches, node, offset) {
+  var contents = node.childNodes;
+  var res = node.cloneNode(false);
   var offset = offset || 0;
   for (var i = 0; i < contents.length; i++) {
     var el = contents[i];
@@ -109,16 +113,16 @@ function applyMatchesToHtml(matches, html, offset) {
     if (el.nodeType == 3) {
       inner = applyMatchesToText(matches, el.nodeValue, offset);
     } else {
-      inner = applyMatchesToHtml(matches, $(el), offset);
+      inner = applyMatchesToHtml(matches, el, offset);
     }
-    res.append(inner[0]);
+    res.appendChild(inner[0]);
     offset += inner[1];
   }
   return [res, offset];
 }
 
 function applyMatchesForRow(row) {
-  row.displayHtml = applyMatchesToHtml(row.matches.slice(), row.clone.clone(), 0)[0]
+  row.displayHtml = $(applyMatchesToHtml(row.matches.slice(), row.clone[0], 0)).html()
 }
 
 function updateDisplayedHtml(codeBlocks) {
@@ -131,13 +135,17 @@ function updateDisplayedHtml(codeBlocks) {
   }
 }
 timingDecorator('updateDisplayedHtml')
-function highlightCode(brush) {
+
+function findAllMatches(brush) {
+  // There may be matches from before, clear them.
+  $.each(codeLines, function(_, line) { line.matches = []; });
+
   var breaks = domInspector.getCodeBreaks().concat([Infinity]);
   breaks = [{ column: -1, line: -1 }]
     .concat($.map(breaks, function(v) { return { column: 0, line: v }; }))
     .concat($.map(breaks, function(v) { return { column: 1, line: v }; }));
 
-  var codeBlocks = splitToBlocks(codeLines, breaks);
+  codeBlocks = splitToBlocks(codeLines, breaks);
   $.each(codeBlocks, function(_, bl) { bl.matches = findMatches(bl.text, brush) });
 
   for (var i = 0; i < codeBlocks.length; i++) {
@@ -163,10 +171,13 @@ function highlightCode(brush) {
       applyMatchesForRow(row);
     }
   }
-  updateDisplayedHtml(codeBlocks);
+}
 
+function highlightCode(brush) {
+  updateDisplayedHtml(codeBlocks);
   $(domInspector.codeTableBody()).addClass('syntaxhighlighter');
 }
+
 timingDecorator('highlightCode')
 
 function clearHighlight() {
@@ -191,14 +202,10 @@ function updateCodeLines() {
     .each(appendCodeRow(codeLines, 1));
 
   codeLines.sort(function(l, r) { return l.column != r.column ? l.column - r.column : l.line - r.line; });
-
-  // There may be matches from before, clear them.
-  $.each(codeLines, function(_, line) { line.matches = []; });
 }
 timingDecorator('updateCodeLines')
 
-function processCode(brush) {
-  updateCodeLines();
+function updateHighlight(brush) {
   chrome.storage.sync.get('enableSyntaxHighlight', function(items) {
     if (items['enableSyntaxHighlight']) {
       highlightCode(brush);
@@ -207,6 +214,15 @@ function processCode(brush) {
     }
   });
 }
+timingDecorator('updateHighlight')
+
+function processCode(brush) {
+  updateCodeLines();
+  findAllMatches(brush);
+  updateHighlight(brush);
+}
+
+timingDecorator('findAllMatches')
 
 function identifyBrush() {
   var path = window.location.pathname;
@@ -228,7 +244,7 @@ function initializeHighlighting() {
   processCode(brush.brush);
   domInspector.observeNewCodelines(function() { processCode(brush.brush); });
   chrome.storage.onChanged.addListener(function() {
-    processCode(brush.brush);
+    updateHighlight(brush.brush);
   }, ['enableSyntaxHighlight']);
   highlightInitialized = true;
 }

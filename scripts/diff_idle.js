@@ -3,7 +3,9 @@ function tagLineNumbers() {
   $(domInspector.codelineOldNew())
     .filter(':not(.rb-hasLineNumber)')
     .addClass('rb-hasLineNumber')
+    .wrapInner('<span class="rb-code">')
     .each(function() {
+      return
       var html = $(this).html();
       var range = domInspector.lineNumberRange(html);
       html = html.substring(0, range[0]) +
