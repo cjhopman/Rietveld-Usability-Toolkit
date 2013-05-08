@@ -92,7 +92,7 @@ function applyMatchesToText(matches, text, offset) {
         document.createTextNode(text.substring(position, matchIndex)));
     }
     inner = document.createElement('span');
-    inner.classList.add(match.css);
+    inner.className = match.css;
     inner.appendChild(
         document.createTextNode(text.substring(matchIndex, matchIndex + matchLength)));
     outer.appendChild(inner);
