@@ -5,6 +5,24 @@
 
 /* If you want a blue button use these styles */
 
+.rb-lineNumberCsLink {
+  text-decoration: none;
+  color: rgb(128,128,128);
+}
+
+.rb-lineNumberCsLinkEnabled {
+  cursor: pointer;
+}
+
+.rb-lineNumberCsLinkEnabled:hover {
+  color: rgb(28,28,138);
+  text-decoration: underline;
+}
+
+.rb-lineNumberCsLinkDisabled {
+  cursor: auto;
+}
+
 .rb-tableHeader input {
   margin:0.5px;
   color: white;

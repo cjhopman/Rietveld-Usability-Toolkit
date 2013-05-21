@@ -138,6 +138,17 @@ function RietveldInspector() {
     return '_frame_' + href.match('/diff2?/([^/]*)/')[1].replace(':', '_');
   }
   this.columnIdFromHtml = function(html) { return html; };
+  this.filePathFromDiffUrl = function(url) {
+    return url.match('.*/[0-9]*/diff2?/[0-9]*/([-a-zA-Z_./]*).*')[1];
+  }
+  this.baseUrlOnDiffPage = function() {
+    var text = $('div div div span.extra').eq(0).text();
+    if (!text.match('Base URL: .*')) {
+      console.error('Bad base url match ??');
+      return '';
+    }
+    return text.substring(10);
+  }
   this.modifyPatchPage = function() {
     var baseUrl = $('.issue_details_sidebar').children().eq(4);
     var html = baseUrl.html();

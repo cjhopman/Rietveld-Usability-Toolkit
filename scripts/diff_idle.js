@@ -46,11 +46,25 @@ function splitCell(self, cellClasses, codeClass) {
   var firstChild = self.firstChild;
   var els = extractLineNumber(self);
   var newCell = self.cloneNode(false);
-  if (els[0]) {
-    lineSpan = document.createElement('span');
+  if (els[0].length > 0) {
+    var lineSpan = document.createElement('span');
     lineSpan.classList.add('rb-lineNumber');
+    var lineAnchor = document.createElement('a');
+    lineAnchor.classList.add('rb-lineNumberCsLink');
     for (var i = 0; i < els[0].length; i++)
-      lineSpan.appendChild(els[0][i]);
+      lineAnchor.appendChild(els[0][i]);
+    lineSpan.appendChild(lineAnchor);
+    var row = $(self).closest('td');
+    var line = parseInt(row.attr('id').substring(7));
+    var filename = domInspector.filePathFromDiffUrl(window.location.href);
+    var baseurl = domInspector.baseUrlOnDiffPage();
+    var cs_link = getCodesearchUrl(window.location.hostname, baseurl, filename, line);
+    if (cs_link) {
+      lineAnchor.href = cs_link;
+      lineAnchor.classList.add('rb-lineNumberCsLinkEnabled');
+    } else {
+      lineAnchor.classList.add('rb-lineNumberCsLinkDisabled');
+    }
     newCell.appendChild(lineSpan);
   }
   if (els[1]) {

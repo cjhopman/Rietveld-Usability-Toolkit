@@ -103,3 +103,25 @@ if (chrome.extension) {
   injectScriptFile(document, chrome.extension.getURL('scripts/lib.js'));
 }
 
+// http://stackoverflow.com/a/4673436
+if (!String.prototype.format) {
+  String.prototype.format = function() {
+    var args = arguments;
+    return this.replace(/{(\d+)}/g, function(match, number) { 
+      return typeof args[number] != 'undefined'
+        ? args[number]
+        : match
+      ;
+    });
+  };
+}
+
+if (!String.prototype.kwformat) {
+  String.prototype.kwformat = function(kwargs) {
+    return this.replace(/{([^}]*)}/g, function(match, kw) {
+      return typeof kwargs[kw] != 'undefined'
+        ? kwargs[kw]
+        : match;
+    });
+  }
+}

@@ -95,7 +95,8 @@
         "lib/syntax/scripts/shCore.js",
         "scripts/diff_idle.js",
         "scripts/brush.js",
-        "scripts/syntax.js"
+        "scripts/syntax.js",
+        "scripts/codesearch.js"
       ],
       "run_at": "document_idle"
     }
