@@ -139,7 +139,7 @@ function RietveldInspector() {
   }
   this.columnIdFromHtml = function(html) { return html; };
   this.filePathFromDiffUrl = function(url) {
-    return url.match('.*/[0-9]*/diff2?/[0-9]*/([-a-zA-Z_./]*).*')[1];
+    return url.match('.*/[0-9]*/diff2?/[0-9:]*/([-a-zA-Z_./]*).*')[1];
   }
   this.baseUrlOnDiffPage = function() {
     var text = $('div div div span.extra').eq(0).text();
