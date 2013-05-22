@@ -1,7 +1,13 @@
 var cs_mappings = [
   [['chromiumcodereview.appspot.com', 'codereview.chromium.org'], {
-    'svn://svn.chromium.org/chrome/trunk/src': 'https://code.google.com/p/chromium/codesearch#chromium/src/{filename}&l={line}',
-    'svn://svn.chromium.org/blink/trunk': 'https://code.google.com/p/chromium/codesearch#chromium/src/third_party/WebKit/{filename}&l={line}'
+    'svn://svn.chromium.org/chrome/trunk/src':
+      'https://code.google.com/p/chromium/codesearch#chromium/src/{filename}&l={line}',
+    '.*chromium.googlesource.com/chromium/src.*':
+      'https://code.google.com/p/chromium/codesearch#chromium/src/{filename}&l={line}',
+    'svn://svn.chromium.org/blink/trunk':
+      'https://code.google.com/p/chromium/codesearch#chromium/src/third_party/WebKit/{filename}&l={line}',
+    '.*chromium.googlesource.com/chromium/blink.*':
+      'https://code.google.com/p/chromium/codesearch#chromium/src/third_party/WebKit/{filename}&l={line}'
   }],
 ];
 
