@@ -139,3 +139,58 @@ function fixDarkLines() {
 }
 fixDarkLines();
 
+// Display progress bar reflecting the percentage of reviewed files
+// assuming that reviewer moves from the first file to last linearly.
+(function() {
+  var bar = null;
+
+  function showBar() {
+    if (bar !== null) {
+      return;
+    }
+
+    // Find pane that floats on the left in the patch view.
+    var pane = $("div > div > form[method='GET']").parent().parent();
+
+    // Inject a div at the top and move to be at the very top of the pane
+    // ignoring pane's padding.
+    bar = $("<div/>").css("margin-top", "-5px")
+                     .css("margin-left", "-5px")
+                     .css("margin-bottom", "5px")
+                     .css("margin-right", "-5px")
+                     .prependTo(pane);
+
+    // Find file select ("Jump to" one) on the same pane and use it
+    // to calculate progress percentage.
+    var select = pane.find("div > select").get(0);
+    var pct = select.selectedIndex * 100 / select.length;
+
+    // Create a percentage bar.
+    $("<div/>").height(5)
+               .width(pct * (pane.outerWidth() / 100))
+               .css("background-color", "lightslategray")
+               .prependTo(bar);
+  }
+
+  function hideBar() {
+    if (bar !== null) {
+      bar.remove();
+      bar = null;
+    }
+  }
+
+  function displayProgress() {
+    chrome.storage.sync.get(['displayProgress'] , function(items) {
+      if (items.displayProgress) {
+        showBar();
+      } else {
+        hideBar();
+      }
+    });
+  }
+
+  chrome.storage.onChanged.addListener(displayProgress, ['displayProgress']);
+
+  // When the DOM is ready.
+  $(displayProgress);
+})();
