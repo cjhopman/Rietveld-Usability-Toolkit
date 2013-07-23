@@ -23,6 +23,11 @@ var manifest = {
       "default": true,
       "description": "Add breakpoints to Base URL."
     },
+    "displayProgress": {
+      "type": "bool",
+      "default": true,
+      "description": "Display review progress in the single patch view."
+    },
     "enableAnimations": {
       "type": "bool",
       "default": true,
