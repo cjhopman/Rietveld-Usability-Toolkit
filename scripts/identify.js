@@ -5,7 +5,8 @@ var rietveldInstances = [
   "breakpad.appspot.com",
   "chromiumcodereview.appspot.com",
   "chromereviews.googleplex.com",
-  "codereview.chromium.org"
+  "codereview.chromium.org",
+  "webrtc-codereview.appspot.com"
 ];
 
 var gerritInstances = [
