@@ -33,7 +33,8 @@
         "*://breakpad.appspot.com/*",
         "*://chromiumcodereview.appspot.com/*",
         "*://chromereviews.googleplex.com/*",
-        "*://codereview.chromium.org/*"
+        "*://codereview.chromium.org/*",
+        "*://webrtc-codereview.appspot.com/*"
       ],
       "all_frames": true,
       "js": [
@@ -51,7 +52,8 @@
         "*://breakpad.appspot.com/*",
         "*://codereview.appspot.com/*",
         "*://codereview.chromium.org/*",
-        "*://chromereviews.googleplex.com/*"
+        "*://chromereviews.googleplex.com/*",
+        "*://webrtc-codereview.appspot.com/*"
       ],
       "all_frames": true,
       "js": [
@@ -72,7 +74,8 @@
         "*://breakpad.appspot.com/*/diff*",
         "*://codereview.appspot.com/*/diff*",
         "*://codereview.chromium.org/*/diff*",
-        "*://chromereviews.googleplex.com/*/diff*"
+        "*://chromereviews.googleplex.com/*/diff*",
+        "*://webrtc-codereview.appspot.com/*/diff"
       ],
       "js": [
         "scripts/diff_begin.js"
@@ -89,7 +92,8 @@
         "*://breakpad.appspot.com/*/diff*",
         "*://chromiumcodereview.appspot.com/*/diff*",
         "*://codereview.chromium.org/*/diff*",
-        "*://chromereviews.googleplex.com/*/diff*"
+        "*://chromereviews.googleplex.com/*/diff*",
+        "*://webrtc-codereview.appspot.com/*/diff"
       ],
       "all_frames": true,
       "js": [
