@@ -12,6 +12,7 @@
     "*://chromereviews.googleplex.com/*",
     "*://codereview.chromium.org/*",
     "*://webrtc-codereview.appspot.com/*"
+    "*://codereview.webrtc.org/*"
   ],
   "background" : {
     "scripts": [ "scripts/background.js" ],
