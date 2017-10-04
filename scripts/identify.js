@@ -1,18 +1,16 @@
-var domInspector = null;
+// var rietveldInstances = [
+//   "codereview.appspot.com",
+//   "breakpad.appspot.com",
+//   "chromiumcodereview.appspot.com",
+//   "chromereviews.googleplex.com",
+//   "codereview.chromium.org",
+//   "webrtc-codereview.appspot.com"
+// ];
 
-var rietveldInstances = [
-  "codereview.appspot.com",
-  "breakpad.appspot.com",
-  "chromiumcodereview.appspot.com",
-  "chromereviews.googleplex.com",
-  "codereview.chromium.org",
-  "webrtc-codereview.appspot.com"
-];
-
-var gerritInstances = [
-  "gerrit.chromium.org",
-  "gerrit-int.chromium.org"
-];
+// var gerritInstances = [
+//   "gerrit.chromium.org",
+//   "gerrit-int.chromium.org"
+// ];
 
 function RietveldInspector() {
   this.isDiff = function() {
@@ -244,30 +242,30 @@ function GerritInspector() {
 }
 
 
-function isUrlRietveld(url) {
-  for (var i in rietveldInstances) {
-    if (url.indexOf(rietveldInstances[i]) >= 0) {
-      return true;
-    }
-  }
-  return false;
-}
+// function isUrlRietveld(url) {
+//   for (var i in rietveldInstances) {
+//     if (url.indexOf(rietveldInstances[i]) >= 0) {
+//       return true;
+//     }
+//   }
+//   return false;
+// }
 
-function isUrlGerrit(url) {
-  for (var i in gerritInstances) {
-    if (url.indexOf(gerritInstances[i]) >= 0) {
-      return true;
-    }
-  }
-  return false;
-}
+// function isUrlGerrit(url) {
+//   for (var i in gerritInstances) {
+//     if (url.indexOf(gerritInstances[i]) >= 0) {
+//       return true;
+//     }
+//   }
+//   return false;
+// }
 
-if (isUrlRietveld(document.URL)) {
-  domInspector = new RietveldInspector();
-} else if (isUrlGerrit(document.URL)) {
-  domInspector = new GerritInspector();
-}
+// if (isUrlRietveld(document.URL)) {
+//   domInspector = new RietveldInspector();
+// } else if (isUrlGerrit(document.URL)) {
+//   domInspector = new GerritInspector();
+// }
 
-
-
-
+// code is injected properly elsewhere, no need to check url
+// drop gerrit support (for now)
+var domInspector = new RietveldInspector();

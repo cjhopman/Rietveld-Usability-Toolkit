@@ -49,6 +49,53 @@ function addDropdown(container, name, setting) {
   container.append(div);
 }
 
+function addTextbox(container, name, setting) {
+  var div = $('<div class="rb-setting"/>');
+  var textbox = $('<input type="text" class="rb-textbox"/>');
+  
+  function update() {
+    chrome.storage.sync.get(name, function(items) {
+      textbox.val(items[name]);
+    });
+  };
+
+  update();
+  chrome.storage.onChanged.addListener(update, name);
+
+  textbox.change(function() {
+    var change = {};
+    change[name] = textbox.val();
+    chrome.storage.sync.set(change);
+  });
+
+  div.append(textbox).append($('<span/>').html(setting.description));
+  container.append(div);
+}
+
+function addList(container, name, setting) {
+  // textarea in csv format for now, improve later
+  var div = $('<div class="rb-setting"/>');
+  var textarea = $('<textarea rows="4" cols="50"/>')
+
+  function update() {
+    chrome.storage.sync.get(name, function(items) {
+      textarea.val(items[name]);
+    });
+  };
+
+  update();
+  chrome.storage.onChanged.addListener(update, name);
+
+  textarea.change(function() {
+    var change = {};
+    change[name] = textarea.val();
+    chrome.storage.sync.set(change);
+  });
+
+  div.append(textarea).append($('<span/>').html(setting.description));
+  container.append(div);
+}
+
 function insertControls(div) {
   var settings = manifest.settings;
   $.each(settings, function (name) {
@@ -58,6 +105,12 @@ function insertControls(div) {
     }
     if (setting.type == 'dropdown') {
       addDropdown(div, name, setting);
+    }
+    if (setting.type == 'string') {
+      addTextbox(div, name, setting);
+    }
+    if (setting.type == 'list') {
+      addList(div, name, setting);
     }
   });
 }

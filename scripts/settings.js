@@ -48,6 +48,11 @@ var manifest = {
       "default": "Inconsolata",
       "description": "Font for code lines."
     },
+    "hosts": {
+      "type": "list",
+      "default": ["codereview.chromium.org", "review.test.com"],
+      "description": "Rietveld URLs to beautify"
+    },
     "codeFontEnabled": {
       "type": "bool",
       "default": false,

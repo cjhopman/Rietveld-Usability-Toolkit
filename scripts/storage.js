@@ -80,6 +80,8 @@ function decorateChromeApis() {
             break;
           case 'number':
             break;
+          case 'list':
+            break;
           default:
             throw new Error('Unrecognized type: ' + type);
         }
