@@ -50,7 +50,14 @@ var manifest = {
     },
     "hosts": {
       "type": "list",
-      "default": ["codereview.chromium.org", "review.test.com"],
+      "default": [
+        "codereview.chromium.org",
+        "breakpad.appspot.com",
+        "chromiumcodereview.appspot.com",
+        "chromereviews.googleplex.com",
+        "codereview.chromium.org",
+        "webrtc-codereview.appspot.com"
+      ],
       "description": "Rietveld URLs to beautify"
     },
     "codeFontEnabled": {
