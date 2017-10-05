@@ -1,17 +1,13 @@
 {
   "name": "Rietveld Usability Toolkit",
-  "version": "0.3.8",
+  "version": "0.4.0",
   "manifest_version" : 2,
   "description": "Making Rietveld usable",
   "permissions": [
     "tabs",
     "storage",
-    "*://codereview.appspot.com/*",
-    "*://breakpad.appspot.com/*",
-    "*://chromiumcodereview.appspot.com/*",
-    "*://chromereviews.googleplex.com/*",
-    "*://codereview.chromium.org/*",
-    "*://webrtc-codereview.appspot.com/*"
+    "http://*/",
+    "https://*/"
   ],
   "background" : {
     "scripts": [ "scripts/background.js" ],
@@ -26,86 +22,6 @@
     "default_title" : "Rietveld Beautifier",
     "default_popup" : "settings/popup.html"
   },
-  "content_scripts": [
-    {
-      "matches": [
-        "*://codereview.appspot.com/*",
-        "*://breakpad.appspot.com/*",
-        "*://chromiumcodereview.appspot.com/*",
-        "*://chromereviews.googleplex.com/*",
-        "*://codereview.chromium.org/*",
-        "*://webrtc-codereview.appspot.com/*"
-      ],
-      "all_frames": true,
-      "js": [
-        "lib/jquery-1.8.3.min.js",
-        "scripts/lib.js",
-        "scripts/settings.js",
-        "scripts/storage.js",
-        "scripts/identify.js"
-      ],
-      "run_at": "document_start"
-    },
-    {
-      "matches": [
-        "*://chromiumcodereview.appspot.com/*",
-        "*://breakpad.appspot.com/*",
-        "*://codereview.appspot.com/*",
-        "*://codereview.chromium.org/*",
-        "*://chromereviews.googleplex.com/*",
-        "*://webrtc-codereview.appspot.com/*"
-      ],
-      "all_frames": true,
-      "js": [
-        "scripts/loadQueue.js",
-        "scripts/controls.js",
-        "scripts/help.js",
-        "scripts/main.js"
-      ],
-      "css": [
-        "css/main.css",
-        "css/spinner.css"
-      ],
-      "run_at": "document_idle"
-    },
-    {
-      "matches": [
-        "*://chromiumcodereview.appspot.com/*/diff*",
-        "*://breakpad.appspot.com/*/diff*",
-        "*://codereview.appspot.com/*/diff*",
-        "*://codereview.chromium.org/*/diff*",
-        "*://chromereviews.googleplex.com/*/diff*",
-        "*://webrtc-codereview.appspot.com/*/diff"
-      ],
-      "js": [
-        "scripts/diff_begin.js"
-      ],
-      "all_frames": true,
-      "css": [
-        "css/style.css"
-      ],
-      "run_at": "document_start"
-    },
-    {
-      "matches": [
-        "*://codereview.appspot.com/*/diff*",
-        "*://breakpad.appspot.com/*/diff*",
-        "*://chromiumcodereview.appspot.com/*/diff*",
-        "*://codereview.chromium.org/*/diff*",
-        "*://chromereviews.googleplex.com/*/diff*",
-        "*://webrtc-codereview.appspot.com/*/diff"
-      ],
-      "all_frames": true,
-      "js": [
-        "lib/syntax/scripts/shCore.js",
-        "scripts/diff_idle.js",
-        "scripts/brush.js",
-        "scripts/syntax.js",
-        "scripts/codesearch.js"
-      ],
-      "run_at": "document_idle"
-    }
-  ],
   "icons": {
     "16": "icons/rietveld-icon-16.png",
     "48": "icons/rietveld-icon-48.png",
